@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BASE, norm, fmtT, meta, plural, ingList, illus, imgUrl, portionLabel, parseDurations, addedOf, fmtDate } from './lib.js';
+import { BASE, norm, fmtT, meta, plural, ingList, illus, imgUrl, portionLabel, parseDurations, addedOf, fmtDate, difficulty } from './lib.js';
 import { useTimers, StepTimer, TimerPills } from './timers.jsx';
 import { useRecipeStore, getCapability } from './store.js';
 import { CATS as CORE_CATS } from './data.js';
@@ -525,7 +525,7 @@ function RecipeView({ r, fav, portions, setPortions, onBack, onFav, onShare, onC
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           <span className="tag tag-accent-2">{fmtT(r.t)}</span>
           <span className="tag tag-accent">{r.ing.length} ingrédients</span>
-          <span className="tag tag-accent-2">Facile</span>
+          <span className={'tag ' + ({ Facile: 'tag-accent-2', Moyen: 'tag-accent', Long: 'tag-neutral' })[difficulty(r)]}>{difficulty(r)}</span>
           {r.cats.map(c => <span key={c} className="tag tag-neutral">{c}</span>)}
           <button className="reset tag" onClick={onCats} aria-label="Modifier les catégories"
             style={{ border: '1px dashed var(--color-neutral-500)', gap: 4, cursor: 'pointer' }}>

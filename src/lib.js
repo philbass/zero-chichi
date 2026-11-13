@@ -182,3 +182,8 @@ export function fmtClock(ms) {
   const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
   return (h ? h + ':' + String(m).padStart(2, '0') : String(m)) + ':' + String(s).padStart(2, '0');
 }
+
+/** Niveau calculé : « Facile » (≤ 45 min et ≤ 8 ingrédients principaux), « Long » (plus de 2 h), sinon « Moyen ». */
+// On ne compte pas le sel, le poivre ni les ingrédients « un peu » ou en option.
+const mainIngredients = r => r.ing.filter(([q, , n]) => (typeof q === 'number' || (typeof q === 'string' && q)) && !/\(option\)/.test(n)).length;
+export const difficulty = r => (r.t <= 45 && mainIngredients(r) <= 8 ? 'Facile' : r.t > 120 ? 'Long' : 'Moyen');
