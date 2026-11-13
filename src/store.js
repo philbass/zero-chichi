@@ -5,6 +5,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { RECIPES, CATS } from './data.js';
 import { blobToDataUrl } from './imageTools.js';
+import { today } from './lib.js';
 
 const LS = 'zc:userdata';
 const EMPTY = { custom: {}, cats: {}, edits: {}, newCats: {} };
@@ -74,7 +75,7 @@ export function useRecipeStore() {
 
   const saveRecipe = async r => {
     const id = r.id || 'u-' + Date.now().toString(36);
-    const clean = { ...r, id, custom: true, createdAt: r.createdAt || Date.now() };
+    const clean = { ...r, id, custom: true, createdAt: r.createdAt || Date.now(), added: r.added || today() };
     delete clean.notes;
     setCustom(o => ({ ...o, [id]: clean }));
     if (dbRef.current) await dbRef.current.doc('recipes/' + id).set({ json: JSON.stringify(clean), name: clean.name });

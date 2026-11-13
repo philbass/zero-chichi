@@ -7,6 +7,13 @@ export const fmt = n => String(Math.round(n * 10) / 10).replace('.', ',');
 export const fmtT = t => { if (t < 60) return t + ' min'; const h = Math.floor(t / 60), m = t % 60; return h + ' h' + (m ? ' ' + m : ''); };
 export const meta = r => fmtT(r.t) + ' · ' + r.ing.length + ' ingrédients';
 export const plural = (n, w) => n + ' ' + w + (n > 1 ? 's' : '');
+const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+/** Date du jour au format AAAA-MM-JJ (heure locale). */
+export const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+/** Date d'ajout d'une recette (AAAA-MM-JJ), ou null si inconnue. */
+export const addedOf = r => r.added || (r.createdAt ? new Date(r.createdAt).toISOString().slice(0, 10) : null);
+/** « 13 novembre 2026 » */
+export const fmtDate = iso => { const [y, m, d] = iso.split('-').map(Number); return (d === 1 ? '1er' : d) + ' ' + MOIS[m - 1] + ' ' + y; };
 export const portionLabel = (r, n) => n + ' ' + (r.yield ? r.yield[n > 1 ? 1 : 0] : 'pers.');
 
 export const ingList = (r, portions) => {

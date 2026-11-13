@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BASE, norm, fmtT, meta, plural, ingList, illus, imgUrl, portionLabel, parseDurations } from './lib.js';
+import { BASE, norm, fmtT, meta, plural, ingList, illus, imgUrl, portionLabel, parseDurations, addedOf, fmtDate } from './lib.js';
 import { useTimers, StepTimer, TimerPills } from './timers.jsx';
 import { useRecipeStore, getCapability } from './store.js';
 import { CATS as CORE_CATS } from './data.js';
@@ -136,7 +136,9 @@ export default function App() {
     return { name: c, n, countLabel: n ? plural(n, 'recette') : 'Vide', bg: `var(--color-${t}-200)`, fg: `var(--color-${t}-800)` };
   }), [recipes, categories]);
   const quick = useMemo(() => recipes.filter(r => r.t <= 30 && imgUrl(r)), [recipes]);
-  const desserts = useMemo(() => recipes.filter(r => r.cats.includes('Desserts')), [recipes]);
+  // Les plus récentes d'abord ; à date égale, la dernière ajoutée à la liste passe devant.
+  const latest = useMemo(() => recipes.map((r, i) => [r, addedOf(r) || '', i])
+    .sort((a, b) => (a[1] === b[1] ? b[2] - a[2] : a[1] < b[1] ? 1 : -1)).slice(0, 8).map(x => x[0]), [recipes]);
 
   let rows = [], listTitle = '', listSub = '', emptyTitle = '', emptyText = '', browse = false, searchInfo = '';
   if (s === 'search') {
@@ -217,6 +219,20 @@ export default function App() {
             </section>
 
             <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <h2 className="h" style={{ fontSize: 20, margin: 0 }}>Dernières recettes</h2>
+              <div className="hscroll" style={{ gap: 12, paddingBottom: 4 }}>
+                {latest.map(r => (
+                  <button key={r.id} className="reset press" onClick={() => openRecipe(r)}
+                    style={{ flex: 'none', width: 180, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div className="illus" style={{ width: '100%', height: 150, borderRadius: 28, background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 16 }} />
+                    <div className="h" style={{ fontSize: 16, lineHeight: 1.2 }}>{r.name}</div>
+                    <div className="muted" style={{ fontSize: 12, marginTop: -6 }}>{meta(r)}</div>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <h2 className="h" style={{ fontSize: 20, margin: 0 }}>Prêt en 30 min</h2>
               <div className="hscroll" style={{ gap: 12, paddingBottom: 4 }}>
                 {quick.map(r => (
@@ -230,20 +246,6 @@ export default function App() {
               </div>
             </section>
 
-            <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <h2 className="h" style={{ fontSize: 20, margin: 0 }}>Pour le dessert</h2>
-              {desserts.map(r => (
-                <button key={r.id} className="reset press" onClick={() => openRecipe(r)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8, borderRadius: 24, background: 'var(--color-surface)' }}>
-                  <div style={{ width: 56, height: 56, flex: 'none', borderRadius: '50%', background: illus(r, 'accent'), backgroundOrigin: 'content-box', padding: 8 }} />
-                  <div style={{ flex: 1 }}>
-                    <div className="h" style={{ fontSize: 16 }}>{r.name}</div>
-                    <div className="muted" style={{ fontSize: 12 }}>{meta(r)}</div>
-                  </div>
-                  <Icon d="m9 18 6-6-6-6" size={18} stroke="var(--color-neutral-600)" style={{ marginRight: 8 }} />
-                </button>
-              ))}
-            </section>
           </div>
         )}
 
@@ -530,6 +532,7 @@ function RecipeView({ r, fav, portions, setPortions, onBack, onFav, onShare, onC
             <Icon d={PENCIL} size={12} sw={2.5} />Catégories
           </button>
         </div>
+        {addedOf(r) && <div className="muted" style={{ fontSize: 13 }}>Ajoutée le {fmtDate(addedOf(r))}</div>}
         {onEdit && (
           <button className="btn btn-ghost" onClick={onEdit} style={{ alignSelf: 'flex-start', textDecoration: 'underline', textUnderlineOffset: 3, fontSize: 14, marginTop: -2 }}>
             Modifier la recette
