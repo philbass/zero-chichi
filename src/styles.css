@@ -1,0 +1,201 @@
+/* Système Organic, re-teinté pour Zéro Chichi (valeurs reprises de la maquette). */
+:root {
+  --color-bg: #FBF6EA;
+  --color-surface: #FFFFFF;
+  --color-text: #1F3A2E;
+  --color-divider: #DDE6D6;
+  --color-error: #C4553D;
+
+  --color-accent: #F2A541;
+  --color-accent-100: #F8DDB4;
+  --color-accent-200: #F8DDB4;
+  --color-accent-300: #F8DDB4;
+  --color-accent-400: #F6BE72;
+  --color-accent-500: #F2A541;
+  --color-accent-600: #E3952F;
+  --color-accent-700: #1F3A2E;
+  --color-accent-800: #1F3A2E;
+  --color-accent-900: #1F3A2E;
+
+  --color-accent-2-100: #CFE3C4;
+  --color-accent-2-200: #CFE3C4;
+  --color-accent-2-300: #B9D3AB;
+  --color-accent-2-400: #CFE3C4;
+  --color-accent-2-500: #587062;
+  --color-accent-2-600: #34503F;
+  --color-accent-2-700: #1F3A2E;
+  --color-accent-2-800: #1F3A2E;
+  --color-accent-2-900: #1F3A2E;
+
+  --color-neutral-100: #E7F0E0;
+  --color-neutral-200: #E7F0E0;
+  --color-neutral-300: #DDE6D6;
+  --color-neutral-500: #8FA597;
+  --color-neutral-600: #587062;
+  --color-neutral-700: #587062;
+  --color-neutral-800: #1F3A2E;
+  --color-neutral-900: #1F3A2E;
+
+  --font-heading: "Caprasimo", system-ui, sans-serif;
+  --font-body: "Figtree", system-ui, sans-serif;
+  --radius-md: 16px;
+
+  --shadow-md: 0 3px 10px color-mix(in srgb, #1F3A2E 16%, transparent);
+  --shadow-lg: 0 12px 32px color-mix(in srgb, #1F3A2E 22%, transparent);
+
+  /* Hauteur de la barre d'état : réelle (safe area) sur téléphone, simulée dans le cadre desktop. */
+  --status-h: env(safe-area-inset-top, 0px);
+  --bottom-safe: env(safe-area-inset-bottom, 0px);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+button { -webkit-tap-highlight-color: transparent; }
+img { display: block; max-width: 100%; }
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+::selection { background: color-mix(in srgb, var(--color-accent) 30%, transparent); }
+
+/* ── Cadre ─────────────────────────────────────────────── */
+.app {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-bg);
+  color: var(--color-text);
+  display: flex;
+  flex-direction: column;
+}
+.statusbar { height: var(--status-h); flex: none; position: relative; z-index: 30; }
+.statusbar-fake { display: none; }
+
+/* Sur grand écran : un téléphone 390 × 844 centré, comme dans la maquette. */
+@media (min-width: 600px) and (min-height: 700px) {
+  body { background: #E7F0E0; }
+  #root { display: grid; place-items: center; padding: 24px; min-height: 100%; height: auto; }
+  .app {
+    --status-h: 48px;
+    --bottom-safe: 0px;
+    width: 390px;
+    height: 844px;
+    max-height: calc(100dvh - 48px);
+    border-radius: var(--frame-radius, 54px);
+    box-shadow: 0 0 0 10px var(--color-neutral-900), var(--shadow-lg);
+  }
+  .statusbar-fake {
+    display: flex; height: 100%; align-items: center; justify-content: space-between;
+    padding: 0 28px; font-weight: 700; font-size: 15px;
+  }
+}
+
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+}
+.scroll::-webkit-scrollbar, .hscroll::-webkit-scrollbar { display: none; }
+.hscroll { display: flex; overflow-x: auto; scrollbar-width: none; margin: 0 -22px; padding: 0 22px; }
+
+/* ── Typo ─────────────────────────────────────────────── */
+.h { font-family: var(--font-heading); font-weight: 400; }
+.muted { color: var(--color-neutral-700); }
+
+/* ── Boutons ──────────────────────────────────────────── */
+.reset {
+  border: none; background: transparent; font: inherit; color: inherit;
+  cursor: pointer; padding: 0; text-align: left;
+}
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  cursor: pointer; font-family: var(--font-heading); font-weight: 400;
+  font-size: 14px; line-height: 1.2; color: var(--color-text);
+  background: transparent; border: 1px solid transparent;
+  padding: 8.8px 15.84px; border-radius: 999px;
+  transition: background-color .15s;
+}
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-primary { background: var(--color-accent); }
+.btn-primary:hover { background: var(--color-accent-600); }
+.btn-primary:active { background: var(--color-accent-400); }
+.btn-secondary { border-color: var(--color-divider); }
+.btn-secondary:hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+.btn-secondary:active { background: color-mix(in srgb, var(--color-text) 14%, transparent); }
+.btn-ghost { padding-inline: 4.4px; }
+.btn-ghost:hover { background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
+
+.icon-btn {
+  width: 44px; height: 44px; flex: none; border-radius: 50%; border: none;
+  background: transparent; display: grid; place-items: center; cursor: pointer;
+  color: var(--color-text); transition: background-color .15s, transform .1s;
+}
+.icon-btn:hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+.icon-btn:active { transform: scale(.94); }
+.icon-btn.raised { background: var(--color-bg); box-shadow: var(--shadow-md); }
+
+.press { transition: transform .12s, filter .15s; }
+.press:hover { filter: brightness(.98); }
+.press:active { transform: scale(.98); }
+
+/* ── Tags ─────────────────────────────────────────────── */
+.tag {
+  display: inline-flex; align-items: center; font-size: 12px; font-weight: 600;
+  letter-spacing: .02em; padding: 3px 10px; border-radius: 999px;
+}
+.tag-accent { background: var(--color-accent-100); color: var(--color-accent-800); }
+.tag-accent-2 { background: var(--color-accent-2-100); color: var(--color-accent-2-800); }
+.tag-neutral { background: var(--color-neutral-100); color: var(--color-neutral-800); }
+
+/* ── Champs ───────────────────────────────────────────── */
+.input {
+  width: 100%; min-height: 36px; font: inherit; font-size: 15px; color: var(--color-text);
+  caret-color: var(--color-accent); background: var(--color-surface);
+  border: 1px solid var(--color-divider); border-radius: 999px; padding: 6px 14px;
+}
+.input:hover { border-color: color-mix(in srgb, var(--color-text) 45%, transparent); }
+.input:focus-visible { border-color: var(--color-accent); outline: 2px solid var(--color-accent); outline-offset: 0; }
+
+/* ── Visuels de plat ─────────────────────────────────── */
+.illus { background-origin: content-box; }
+
+/* ── Toast ────────────────────────────────────────────── */
+.toast {
+  position: absolute; left: 50%; bottom: calc(104px + var(--bottom-safe)); transform: translateX(-50%);
+  z-index: 40; padding: 12px 20px; border-radius: 999px; background: var(--color-neutral-900);
+  color: var(--color-bg); font-size: 14px; font-weight: 600; white-space: nowrap;
+  box-shadow: var(--shadow-lg); animation: toast-in .2s ease-out;
+}
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px); } }
+
+.screen { animation: screen-in .18s ease-out; }
+@keyframes screen-in { from { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .screen, .toast { animation: none; }
+}
+
+/* Le champ de recherche a déjà sa propre croix. */
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration { -webkit-appearance: none; appearance: none; }
+
+/* Intégré dans une page hôte qui gère déjà les marges de sécurité du téléphone. */
+@media (max-width: 599px), (max-height: 699px) {
+  .embed .app { --status-h: 0px; --bottom-safe: 0px; }
+}
+
+@keyframes timer-pulse { 50% { filter: brightness(1.12); transform: scale(1.02); } }
+@media (prefers-reduced-motion: reduce) { [role="timer"] { animation: none !important; } }
