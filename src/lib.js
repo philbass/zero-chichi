@@ -26,16 +26,19 @@ export const illus = (r, tint, url = imgUrl(r)) => url
 
 /* ── Ingrédients : « 200 g de farine » ⇄ [200, 'g', 'farine'] ─────────── */
 const UNITS = [
-  ['c. à s.', /^(c\.?\s*à\s*s\.?|cs|cas|cuill(?:è|e)res?\s*à\s*soupe|c\.?\s*s\.?)\b/i],
-  ['c. à c.', /^(c\.?\s*à\s*c\.?|cc|cac|cuill(?:è|e)res?\s*à\s*caf(?:é|e)|c\.?\s*c\.?)\b/i],
-  ['kg', /^kg\b/i], ['g', /^(g|gr|grammes?)\b/i], ['mg', /^mg\b/i],
-  ['L', /^(l|litres?)\b/i], ['cl', /^cl\b/i], ['ml', /^ml\b/i], ['dl', /^dl\b/i],
+  ['c. à s.', /^(c\.?\s*à\s*s\.?|cs|cas|cuill(?:è|e)res?\s*à\s*soupe|c\.?\s*s\.?)(?=[\s,;)]|$)/i],
+  ['c. à c.', /^(c\.?\s*à\s*c\.?|cc|cac|cuill(?:è|e)res?\s*à\s*caf(?:é|e)|c\.?\s*c\.?)(?=[\s,;)]|$)/i],
+  ['kg', /^kg\b/i], ['g', /^(g|gr|grammes?)(?=[\s,;)]|$)/i], ['mg', /^mg\b/i],
+  ['L', /^(l|litres?)(?=[\s,;)]|$)/i], ['cl', /^cl\b/i], ['ml', /^ml\b/i], ['dl', /^dl\b/i],
   ['pincée', /^pinc(?:é|e)es?\b/i], ['gousses', /^gousses?\b/i], ['branches', /^branches?\b/i],
   ['tranches', /^tranches?\b/i], ['feuilles', /^feuilles?\b/i], ['sachet', /^sachets?\b/i],
   ['boîte', /^bo(?:î|i)tes?\b/i], ['brique', /^briques?\b/i], ['botte', /^bottes?\b/i],
   ['bouquet', /^bouquets?\b/i], ['verre', /^verres?\b/i], ['noix', /^noix\b/i], ['rouleau', /^rouleaux?\b/i],
   ['paquet', /^paquets?\b/i], ['tige', /^tiges?\b/i], ['noisette', /^noisettes?\b/i],
+  ['cm', /^cm\b/i], ['shot', /^shots?\b/i],
 ];
+// Unités écrites en toutes lettres : on garde la forme tapée (« 1 gousse », « 3 gousses »).
+const KEEP_AS_TYPED = new Set(['pincée', 'gousses', 'branches', 'tranches', 'feuilles', 'sachet', 'boîte', 'brique', 'botte', 'bouquet', 'verre', 'rouleau', 'paquet', 'tige', 'noisette', 'shot']);
 const FRACTIONS = { '½': 0.5, '¼': 0.25, '¾': 0.75, '⅓': 1 / 3, '⅔': 2 / 3 };
 
 const cleanLine = s => s
@@ -50,11 +53,16 @@ export function parseIngredient(line) {
   // « Farine : 200 g » → « 200 g Farine »
   const colon = s.match(/^([^:]+?)\s*:\s*(\d.*)$/);
   if (colon) s = colon[2] + ' ' + colon[1];
+  const range = s.match(/^(\d+(?:[.,]\d+)?\s*(?:à|-)\s*\d+(?:[.,]\d+)?\s*(?:kg|g|cl|ml|l)?)\s+(?:de |d['’])?(.+)$/i);
+  if (range) return [range[1], '', range[2].charAt(0).toLowerCase() + range[2].slice(1)];
   const m = s.match(/^(\d+(?:[.,]\d+)?(?:\s*\/\s*\d+)?|[½¼¾⅓⅔])\s*(.*)$/);
   const low = s => s.charAt(0).toLowerCase() + s.slice(1);
   if (!m) {
-    if (/(selon|au) (le |votre )?go[uû]t/i.test(s)) return ['', '', low(s.replace(/,?\s*(selon|au) (le |votre )?go[uû]t/i, '').trim())];
-    return [null, '', low(s.replace(/\s*\((?:facultatif|optionnel)\)/i, ' (option)'))];
+    // « un peu de X », « quelques X » : quantité libre (affichée « un peu »)
+    const peu = s.match(/^(?:un peu|quelques|un filet)\s+(?:de |d['’])?(.+)$/i);
+    if (peu) return [null, '', low(peu[1])];
+    // sinon pas de quantité affichée (« sel, poivre », « basilic (option) »…)
+    return ['', '', low(s.replace(/,?\s*(selon|au) (le |votre )?go[uû]t/i, '').replace(/\s*\((?:facultatif|optionnel)\)/i, ' (option)').trim())];
   }
   let q = m[1];
   if (FRACTIONS[q] != null) q = FRACTIONS[q];
@@ -63,14 +71,16 @@ export function parseIngredient(line) {
   let rest = m[2], u = '';
   for (const [unit, re] of UNITS) {
     const um = rest.match(re);
-    if (um) { u = unit; rest = rest.slice(um[0].length); break; }
+    if (um && !(unit === 'bouquet' && /^\s*garni/i.test(rest.slice(um[0].length)))) {
+      u = KEEP_AS_TYPED.has(unit) ? um[0].toLowerCase() : unit; rest = rest.slice(um[0].length); break;
+    }
   }
   rest = rest.replace(/^\s*(?:de |d['’]|des |du )/i, '').trim();
   return [q, u, low(rest || s)];
 }
 
 export const ingredientToLine = ([q, u, n]) =>
-  q == null ? n : typeof q === 'string' ? (q ? q + ' ' : '') + n : fmt(q) + (u ? ' ' + u : '') + ' ' + n;
+  q == null ? 'un peu ' + n : typeof q === 'string' ? (q ? q + ' ' : '') + n : fmt(q) + (u ? ' ' + u : '') + ' ' + n;
 
 /* ── Analyse locale (sans Claude) d'un texte de recette collé ─────────── */
 export function parseRecipeText(text) {
