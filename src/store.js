@@ -16,7 +16,7 @@ export async function getCapability(name) {
   try { return (await window.claude?.use?.(name)) || null; } catch { return null; }
 }
 
-const FIELDS = ['name', 'cats', 't', 'p', 'yield', 'ing', 'steps', 'img', 'imgAsset', 'imgData'];
+const FIELDS = ['name', 'cats', 't', 'wait', 'p', 'yield', 'ing', 'steps', 'img', 'imgAsset', 'imgData'];
 const pick = r => Object.fromEntries(FIELDS.filter(k => k in r).map(k => [k, r[k]]));
 
 export function useRecipeStore() {

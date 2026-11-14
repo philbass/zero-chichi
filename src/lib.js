@@ -5,7 +5,13 @@ export const BASE = import.meta.env?.BASE_URL ?? "./";
 export const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 export const fmt = n => String(Math.round(n * 10) / 10).replace('.', ',');
 export const fmtT = t => { if (t < 60) return t + ' min'; const h = Math.floor(t / 60), m = t % 60; return h + ' h' + (m ? ' ' + m : ''); };
-export const meta = r => fmtT(r.t) + ' · ' + r.ing.length + ' ingrédients';
+// Temps d'attente sans rien faire (marinade, repos, au frais…) : r.wait = [minutes, 'type'].
+export const WAIT_TYPES = ['de marinade', 'de repos', 'au frais', 'de trempage', 'de dessalage'];
+export const fmtWaitT = m => (m >= 600 ? '1 nuit' : fmtT(m));
+export const waitLabel = r => (r.wait && r.wait[0] > 0 ? fmtWaitT(r.wait[0]) + ' ' + (r.wait[1] || 'de repos') : '');
+/** Temps total, attente comprise (sert aux filtres « ≤ 30 min »). */
+export const totalT = r => r.t + (r.wait && r.wait[0] > 0 ? r.wait[0] : 0);
+export const meta = r => fmtT(r.t) + (r.wait && r.wait[0] > 0 ? ' + ' + fmtWaitT(r.wait[0]) + ' ' + (r.wait[1] || 'de repos').replace(/^de /, '') : '') + ' · ' + r.ing.length + ' ingrédients';
 export const plural = (n, w) => n + ' ' + w + (n > 1 ? 's' : '');
 const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 /** Date du jour au format AAAA-MM-JJ (heure locale). */
@@ -117,12 +123,13 @@ ${hasImage ? "La recette est sur l'image jointe" + (text.trim() ? ', complétée
 ${text.trim() ? '"""\n' + text.trim() + '\n"""' : ''}
 
 Réponds uniquement avec un objet JSON de cette forme :
-{"name": string, "cats": string[], "t": number, "p": number, "yield": null | [string, string], "ing": [{"q": number | string | null, "u": string, "n": string}], "steps": string[], "notes": string[]}
+{"name": string, "cats": string[], "t": number, "wait": null | [number, string], "p": number, "yield": null | [string, string], "ing": [{"q": number | string | null, "u": string, "n": string}], "steps": string[], "notes": string[]}
 
 Règles :
 - name : nom court et naturel, sans emoji, majuscule seulement au début et aux noms propres.
 - cats : 1 ou 2 catégories prises UNIQUEMENT dans cette liste : ${cats.join(', ')}.
-- t : temps total en minutes (préparation + cuisson + repos). S'il n'est pas donné, estime-le.
+- t : temps actif en minutes (préparation + cuisson), SANS les temps d'attente. S'il n'est pas donné, estime-le.
+- wait : temps d'attente sans rien faire (marinade, repos, passage au frais, trempage, dessalage) de plus de 10 minutes, sous la forme [minutes, type] avec type parmi « de marinade », « de repos », « au frais », « de trempage », « de dessalage » ; une nuit = 720. null s'il n'y en a pas.
 - p : nombre de personnes. S'il n'est pas donné, estime-le. Si la recette donne des pièces (biscuits, bouchons, pâtés…) ou un moule, mets ce nombre dans p et le mot dans yield, au singulier puis au pluriel, par exemple ["bouchon", "bouchons"] ; sinon yield vaut null.
 - ing : un ingrédient par entrée, dans l'ordre de la recette. q est un nombre quand la quantité peut être multipliée (0.5 pour ½), "" pour « sel, poivre » ou « au goût », null pour « quelques », « un peu », « facultatif ». u est l'unité abrégée : g, kg, ml, cl, L, c. à s., c. à c., pincée, gousses, sachet, boîte… ou "" sans unité. n est le nom en minuscules, sans « de » au début, avec une précision courte entre parenthèses si utile (« (option) », « (pâte) »).
 - steps : 3 à 8 étapes, à l'impératif et au tutoiement (« Préchauffe », « Mélange »), une phrase courte chacune, 110 caractères maximum. Garde tous les temps, températures et réglages d'appareil. Supprime les emojis, hashtags et phrases publicitaires.
@@ -136,6 +143,7 @@ export function normalizeRecipe(x, cats) {
     cats: Array.isArray(x?.cats) ? x.cats.filter(c => cats.includes(c)).slice(0, 3) : [],
     t: Math.max(1, Math.round(num(x?.t)) || 30),
     p: Math.max(1, Math.round(num(x?.p)) || 4),
+    wait: Array.isArray(x?.wait) && num(x.wait[0]) > 0 ? [Math.round(num(x.wait[0])), String(x.wait[1] || 'de repos')] : null,
     yield: Array.isArray(x?.yield) && x.yield.length === 2 ? x.yield.map(String) : null,
     ing: (Array.isArray(x?.ing) ? x.ing : []).map(i => {
       if (Array.isArray(i)) return i;
@@ -146,6 +154,7 @@ export function normalizeRecipe(x, cats) {
     notes: (Array.isArray(x?.notes) ? x.notes : []).map(String),
   };
   if (!r.yield) delete r.yield;
+  if (!r.wait) delete r.wait;
   return r;
 }
 

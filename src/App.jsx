@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BASE, norm, fmtT, meta, plural, ingList, illus, imgUrl, portionLabel, parseDurations, addedOf, fmtDate, difficulty } from './lib.js';
+import { BASE, norm, fmtT, meta, plural, ingList, illus, imgUrl, portionLabel, parseDurations, addedOf, fmtDate, difficulty, totalT, waitLabel } from './lib.js';
 import { useTimers, StepTimer, TimerPills } from './timers.jsx';
 import { useRecipeStore, getCapability } from './store.js';
 import { CATS as CORE_CATS } from './data.js';
@@ -164,7 +164,7 @@ export default function App() {
     browse = !nq && !fTime && !fIng;
     const res = recipes.filter(r =>
       (!nq || norm(r.name + ' ' + r.cats.join(' ') + ' ' + r.ing.map(i => i[2]).join(' ')).includes(nq)) &&
-      (!fTime || r.t <= fTime) && (!fIng || r.ing.length <= fIng));
+      (!fTime || totalT(r) <= fTime) && (!fIng || r.ing.length <= fIng));
     rows = browse ? [] : res;
     searchInfo = browse ? 'Ou parcours par catégorie' : plural(res.length, 'résultat');
     emptyTitle = 'Rien trouvé'; emptyText = 'Essaie un autre mot ou retire un filtre.';
@@ -557,6 +557,7 @@ function RecipeView({ r, fav, portions, setPortions, onBack, onFav, onShare, onC
         <h1 className="h" style={{ fontSize: 30, lineHeight: 1.1, margin: 0 }}>{r.name}</h1>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           <span className="tag tag-accent-2">{fmtT(r.t)}</span>
+          {waitLabel(r) && <span className="tag tag-neutral">+ {waitLabel(r)}</span>}
           <span className="tag tag-accent">{r.ing.length} ingrédients</span>
           <span className={'tag ' + ({ Facile: 'tag-accent-2', Moyen: 'tag-accent', Long: 'tag-neutral' })[difficulty(r)]}>{difficulty(r)}</span>
           {r.cats.map(c => <span key={c} className="tag tag-neutral">{c}</span>)}

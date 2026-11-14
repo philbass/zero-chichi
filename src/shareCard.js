@@ -1,5 +1,5 @@
 // Dessine la fiche recette en image PNG (pour WhatsApp, SMS, mail…).
-import { BASE, fmtT, imgUrl, ingList, portionLabel } from './lib.js';
+import { BASE, waitLabel, fmtT, imgUrl, ingList, portionLabel } from './lib.js';
 
 const C = {
   bg: '#FBF6EA', text: '#1F3A2E', muted: '#587062', sage: '#CFE3C4', peach: '#F8DDB4',
@@ -81,7 +81,7 @@ export async function renderRecipeCard(r, portions) {
   // Pastilles : temps, portions, catégorie.
   ctx.font = `700 30px ${B_FONT}`;
   let x = PAD;
-  for (const [label, bg] of [[fmtT(r.t), C.sage], [portionLabel(r, portions), C.peach], [r.cats[0] || '', C.pale]]) {
+  for (const [label, bg] of [[fmtT(r.t) + (waitLabel(r) ? ' + ' + waitLabel(r) : ''), C.sage], [portionLabel(r, portions), C.peach], [r.cats[0] || '', C.pale]]) {
     if (!label) continue;
     const w = ctx.measureText(label).width + 48;
     ctx.fillStyle = bg; roundRect(ctx, x, y, w, 58, 29); ctx.fill();

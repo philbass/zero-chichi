@@ -1,6 +1,6 @@
 // Saisie d'une nouvelle recette (texte collé ou photo), mise en forme automatique, puis relecture.
 import { useEffect, useRef, useState } from 'react';
-import { formatPrompt, illus, imgUrl, ingredientToLine, normalizeRecipe, parseIngredient, parseRecipeText } from './lib.js';
+import { WAIT_TYPES, formatPrompt, illus, imgUrl, ingredientToLine, normalizeRecipe, parseIngredient, parseRecipeText } from './lib.js';
 import { prepareIllustration } from './imageTools.js';
 import { getCapability } from './store.js';
 
@@ -8,6 +8,8 @@ const toForm = r => ({
   name: r.name || '',
   cats: r.cats || [],
   t: String(r.t || ''),
+  wait: r.wait ? String(r.wait[0]) : '',
+  waitType: r.wait ? r.wait[1] : 'de marinade',
   p: String(r.p || ''),
   unit: r.yield ? r.yield[1] : '',
   ing: (r.ing || []).map(ingredientToLine).join('\n'),
@@ -99,7 +101,8 @@ export default function RecipeEditor({ initial, cats, onAddCat, onSave, onDelete
     if (!ing.length) return setError('Ajoute au moins un ingrédient.');
     if (!steps.length) return setError('Ajoute au moins une étape.');
     const unit = form.unit.trim();
-    const fields = { name: form.name.trim(), cats: form.cats, t: t > 0 ? t : 30, p: p > 0 ? p : 4, ing, steps };
+    const w = parseInt(form.wait, 10);
+    const fields = { name: form.name.trim(), cats: form.cats, t: t > 0 ? t : 30, wait: w > 0 ? [w, form.waitType] : null, p: p > 0 ? p : 4, ing, steps };
     if (unit && !/^pers/i.test(unit)) fields.yield = [singular(unit), unit];
     setSaving(true);
     const ok = await onSave(fields, image.mode === 'new' ? { blob: image.blob } : image.mode === 'remove' ? { remove: true } : null);
@@ -207,13 +210,22 @@ export default function RecipeEditor({ initial, cats, onAddCat, onSave, onDelete
             <CatPicker cats={cats} value={form.cats} onToggle={toggleCat} onAdd={onAddCat} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
-            <label style={field}><span style={label}>Temps (min)</span>
+            <label style={field}><span style={label}>Temps actif (min)</span>
               <input id="recipe-t" className="input" inputMode="numeric" value={form.t} onChange={e => set('t', e.target.value.replace(/\D/g, ''))} style={{ height: 46 }} /></label>
             <label style={field}><span style={label}>Pour</span>
               <input id="recipe-p" className="input" inputMode="numeric" value={form.p} onChange={e => set('p', e.target.value.replace(/\D/g, ''))} style={{ height: 46 }} /></label>
             <label style={field}><span style={label}>Unité</span>
               <input id="recipe-unit" className="input" value={form.unit} placeholder="pers." onChange={e => set('unit', e.target.value)} style={{ height: 46 }} /></label>
           </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 2fr)', gap: 10 }}>
+            <label style={field}><span style={label}>Attente (min)</span>
+              <input id="recipe-wait" className="input" inputMode="numeric" value={form.wait} placeholder="0" onChange={e => set('wait', e.target.value.replace(/\D/g, ''))} style={{ height: 46 }} /></label>
+            <label style={field}><span style={label}>Type d'attente</span>
+              <select id="recipe-wait-type" className="input" value={form.waitType} onChange={e => set('waitType', e.target.value)} style={{ height: 46 }}>
+                {WAIT_TYPES.map(w => <option key={w} value={w}>{w.replace(/^(de|au) /, m => (m === 'au ' ? 'au ' : ''))}</option>)}
+              </select></label>
+          </div>
+          <div className="muted" style={{ fontSize: 12, marginTop: -10 }}>Marinade, repos, passage au frais… (720 = une nuit). Ce temps ne compte pas dans le niveau de difficulté.</div>
           <label style={field}>
             <span style={label}>Ingrédients · un par ligne</span>
             <textarea id="recipe-ing" value={form.ing} onChange={e => set('ing', e.target.value)} rows={Math.max(5, form.ing.split('\n').length + 1)} placeholder={'200 g farine\n3 œufs\nsel, poivre'} style={area} />
