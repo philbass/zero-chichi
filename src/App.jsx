@@ -217,7 +217,7 @@ export default function App() {
               <span style={{ width: 40, height: 40, flex: 'none', borderRadius: '50%', background: 'var(--color-accent)', display: 'grid', placeItems: 'center' }}><Icon d="M5 12h14M12 5v14" /></span>
               <span style={{ display: 'flex', flexDirection: 'column' }}>
                 <span className="h" style={{ fontSize: 16 }}>Ajouter une recette</span>
-                <span className="muted" style={{ fontSize: 12 }}>Colle un texte ou une photo, elle se met en forme</span>
+                <span className="muted" style={{ fontSize: 12 }}>Une recette perso, visible seulement sur ton téléphone</span>
               </span>
             </button>
 
