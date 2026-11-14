@@ -135,7 +135,16 @@ export default function App() {
     const n = recipes.filter(r => r.cats.includes(c)).length;
     return { name: c, n, countLabel: n ? plural(n, 'recette') : 'Vide', bg: `var(--color-${t}-200)`, fg: `var(--color-${t}-800)` };
   }), [recipes, categories]);
-  const quick = useMemo(() => recipes.filter(r => r.t <= 30 && imgUrl(r)), [recipes]);
+  // Tirage fait une fois par lancement de l'app : l'ordre reste stable pendant la visite.
+  const [seed] = useState(() => Math.random());
+  const random3 = useMemo(() => {
+    const pool = recipes.filter(r => imgUrl(r));
+    let s = Math.floor(seed * 2147483646) + 1;
+    const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    const a = [...pool];
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a.slice(0, 3);
+  }, [recipes, seed]);
   // Les plus récentes d'abord ; à date égale, la dernière ajoutée à la liste passe devant.
   const latest = useMemo(() => recipes.map((r, i) => [r, addedOf(r) || '', i])
     .sort((a, b) => (a[1] === b[1] ? b[2] - a[2] : a[1] < b[1] ? 1 : -1)).slice(0, 8).map(x => x[0]), [recipes]);
@@ -233,9 +242,9 @@ export default function App() {
             </section>
 
             <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <h2 className="h" style={{ fontSize: 20, margin: 0 }}>Prêt en 30 min</h2>
+              <h2 className="h" style={{ fontSize: 20, margin: 0 }}>Au hasard</h2>
               <div className="hscroll" style={{ gap: 12, paddingBottom: 4 }}>
-                {quick.map(r => (
+                {random3.map(r => (
                   <button key={r.id} className="reset press" onClick={() => openRecipe(r)}
                     style={{ flex: 'none', width: 180, display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <div className="illus" style={{ width: '100%', height: 150, borderRadius: 28, background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 16 }} />
