@@ -7,7 +7,7 @@ import { norm } from './lib.js';
 const FOODS = [
   // À ne pas compter (eau, sel, épices en très petite quantité)
   [['eau'], 0, 0, 0, 0],
-  [['gros sel', 'sel', 'poivre', 'muscade', '4-epices', 'quatre-epices', 'bois d\'inde', 'clous de girofle', 'laurier', 'thym', 'herbes de provence', 'bouquet garni', 'sauge', 'estragon', 'cannelle', 'paprika', 'extrait de vanille', 'levure chimique', 'tabasco'], 0, 0, 0, 0],
+  [['gros sel', 'sel', 'poivre', 'muscade', '4-epices', 'quatre-epices', 'bois d\'inde', 'clous de girofle', 'laurier', 'thym', 'herbes de provence', 'bouquet garni', 'sauge', 'estragon', 'cannelle', 'paprika', 'extrait de vanille', 'levure chimique', 'tabasco', 'fleur de sel', 'aromates'], 0, 0, 0, 0],
   // Viandes et poissons
   [['ailerons de poulet'], 150, 12, 0, 11, 45], // poids avec os
   [['cuisses de poulet'], 150, 14, 0, 10, 250], // poids avec os
@@ -18,6 +18,7 @@ const FOODS = [
   [['joue de boeuf'], 160, 21, 0, 8.5],
   [['queue de boeuf'], 140, 11, 0, 11], // poids avec os
   [['langue de boeuf'], 220, 15, 0, 18],
+  [['tete de veau'], 150, 16, 0, 9.5, 3000], // une tête entière désossée ≈ 3 kg
   [['boeuf'], 130, 21, 0, 5], // bœuf maigre (tête de filet, rumsteck…)
   [['echine de porc'], 230, 18, 0, 17, 215],
   [['travers de porc'], 190, 12, 0, 16], // poids avec os
@@ -91,7 +92,7 @@ const FOODS = [
   [['olives vertes'], 140, 1, 1, 14],
   [['gingembre'], 70, 1.5, 15, 0.7, 5],
   [['piment'], 40, 2, 7, 0.4, 15],
-  [['cive', 'cebette', 'ciboulette', 'persil', 'coriandre', 'basilic', 'aneth'], 30, 3, 3, 0.6, 3],
+  [['cive', 'cebette', 'ciboulette', 'persil', 'coriandre', 'basilic', 'aneth', 'cerfeuil'], 30, 3, 3, 0.6, 3],
   // Matières grasses, sucres, sauces
   [['huile', 'graisse d\'oie', 'saindoux'], 900, 0, 0, 100],
   [['sucre', 'miel'], 390, 0, 98, 0],
