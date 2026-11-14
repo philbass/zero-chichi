@@ -3,7 +3,7 @@ import { BASE, norm, fmtT, meta, plural, ingList, illus, imgUrl, portionLabel, p
 import { useTimers, StepTimer, TimerPills } from './timers.jsx';
 import { useRecipeStore, getCapability } from './store.js';
 import { CATS as CORE_CATS, RECIPES } from './data.js';
-import { APP_URL, APP_URL_SHORT, recipeUrl, takeDeepLink, QRCode, shareLink, useInstall } from './share.jsx';
+import { APP_URL, APP_URL_SHORT, recipeUrl, takeDeepLink, QRCode, shareLink, useInstall, recipeShareUrl, takeSharedCode, decodeSharedRecipe } from './share.jsx';
 import RecipeEditor, { CatPicker } from './RecipeEditor.jsx';
 import { renderRecipeCard, cardFilename } from './shareCard.js';
 import { macros } from './nutrition.js';
@@ -62,6 +62,7 @@ function useTablet() {
 }
 
 // Ouverture par un lien de recette partagé (#recette=…).
+const SHARED = takeSharedCode(); // recette perso reçue (#partage=…)
 const DEEP = (() => { const id = takeDeepLink(); return RECIPES.find(r => r.id === id) || null; })();
 
 /* ── application ─────────────────────────────────────────── */
@@ -95,9 +96,20 @@ export default function App() {
   const depth = useRef(1);
 
   useEffect(() => { if (DEEP) history.pushState({ zc: true }, ''); }, []);
+  /* Recette perso reçue par lien : on propose de l'ajouter. */
+  const receive = useCallback(async code => {
+    const r = await decodeSharedRecipe(code);
+    if (r) setSheet({ type: 'incoming', r });
+    else flashRef.current('Ce lien de recette est incomplet');
+  }, []);
+  useEffect(() => { if (SHARED) receive(SHARED); }, [receive]);
   /* Lien de recette ouvert alors que l'app est déjà affichée. */
   useEffect(() => {
-    const onHash = () => { const id = takeDeepLink(); if (RECIPES.some(r => r.id === id)) goRef.current({ s: 'recipe', id }); };
+    const onHash = () => {
+      const code = takeSharedCode();
+      if (code) { receive(code); return; }
+      const id = takeDeepLink(); if (RECIPES.some(r => r.id === id)) goRef.current({ s: 'recipe', id });
+    };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
@@ -132,6 +144,7 @@ export default function App() {
     setToast(msg);
     toastT.current = setTimeout(() => setToast(''), 1600);
   }, []);
+  const flashRef = useRef(flash);
   const T = useTimers(flash);
   const openTimer = tm => { const id = tm.recipeId; if (!(s === 'cook' && top.id === id)) go({ s: 'cook', id }); setStep(tm.step); };
 
@@ -529,6 +542,21 @@ export default function App() {
       )}
       {sheet?.type === 'app' && <AppShareSheet onClose={() => setSheet(null)} flash={flash} />}
       {sheet?.type === 'install' && <InstallSheet onClose={() => setSheet(null)} />}
+      {sheet?.type === 'incoming' && (
+        <IncomingSheet r={sheet.r}
+          existing={recipes.find(x => x.custom && x.name === sheet.r.name && JSON.stringify(x.ing) === JSON.stringify(sheet.r.ing))}
+          onClose={() => setSheet(null)}
+          onOpen={x => { setSheet(null); go({ s: 'recipe', id: x.id }); }}
+          onAdd={async () => {
+            const r = sheet.r;
+            const id = await updateRecipe(null, { ...r, cats: r.cats.filter(c => categories.includes(c)), shared: true }).catch(() => null);
+            if (!id) { flash('Ajout impossible, réessaie'); return; }
+            setSheet(null);
+            history.pushState({ zc: true }, '');
+            setStack(st => [...st, { s: 'recipe', id }]); setPortions(r.p);
+            flash('Recette ajoutée à tes recettes');
+          }} />
+      )}
       {sheet?.type === 'share' && byId(sheet.id) && (
         <ShareSheet r={byId(sheet.id)} portions={portions} onClose={() => setSheet(null)} flash={flash} />
       )}
@@ -881,6 +909,17 @@ function ShareSheet({ r, portions, onClose, flash }) {
       <button className="btn btn-primary" disabled={!img || busy} onClick={send} style={{ height: 52, fontSize: 16 }}>
         {busy ? 'Un instant…' : "Envoyer l'image"}
       </button>
+      {r.custom && (
+        <button className="btn btn-secondary" onClick={async () => {
+          const url = await recipeShareUrl(r);
+          const res = await shareLink({ title: r.name, text: `Je t'envoie ma recette « ${r.name} ». Ouvre le lien pour l'ajouter à ton app Zéro Chichi :`, url });
+          if (res === 'shared') onClose();
+          else if (res === 'copied') { flash('Lien copié'); onClose(); }
+          else if (res === 'failed') setHint("Partage impossible ici. Essaie depuis l'app installée.");
+        }} style={{ height: 50, fontSize: 15, marginTop: -6 }}>
+          Envoyer la recette à un ami
+        </button>
+      )}
       {!r.custom && (
         <button className="btn btn-secondary" onClick={async () => {
           const res = await shareLink({ title: r.name, text: r.name + ', une recette Zéro Chichi', url: recipeUrl(r) });
@@ -892,7 +931,9 @@ function ShareSheet({ r, portions, onClose, flash }) {
         </button>
       )}
       <div className="muted" style={{ fontSize: 12.5, marginTop: -4, textAlign: 'center' }}>
-        {r.custom ? "Recette perso : seule l'image peut être envoyée." : "Le lien ouvre la recette dans l'app, avec les minuteurs et la liste de courses."}
+        {r.custom
+          ? "Ton ami reçoit un lien pour l'ajouter à son app d'un geste." + (r.imgAsset || r.imgData ? ' Ta photo ne voyage pas avec le lien.' : '')
+          : "Le lien ouvre la recette dans l'app, avec les minuteurs et la liste de courses."}
       </div>
     </Sheet>
   );
@@ -917,6 +958,43 @@ function AppShareSheet({ onClose, flash }) {
       <div style={{ textAlign: 'center', fontWeight: 700, fontSize: 14, userSelect: 'all' }}>{APP_URL_SHORT}</div>
       {hint && <div role="status" style={{ fontSize: 14, fontWeight: 600, overflowWrap: 'anywhere' }}>{hint}</div>}
       <button className="btn btn-primary" onClick={send} style={{ height: 52, fontSize: 16 }}>Envoyer le lien</button>
+    </Sheet>
+  );
+}
+
+function IncomingSheet({ r, existing, onAdd, onOpen, onClose }) {
+  const [busy, setBusy] = useState(false);
+  const shown = r.ing.slice(0, 4);
+  return (
+    <Sheet title="Une recette pour toi" onClose={onClose}>
+      <div className="muted" style={{ fontSize: 14, marginTop: -8 }}>On t'a envoyé une recette perso. Ajoute-la à ton app pour la retrouver, la cuisiner et la modifier.</div>
+      <div style={{ display: 'flex', gap: 14, alignItems: 'center', padding: 10, borderRadius: 26, background: 'var(--color-surface)' }}>
+        <div style={{ width: 84, height: 84, flex: 'none', borderRadius: 22, background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 8 }} />
+        <div style={{ minWidth: 0 }}>
+          <div className="h" style={{ fontSize: 20, lineHeight: 1.15 }}>{r.name}</div>
+          <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>{meta(r)} · {portionLabel(r, r.p)}</div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {shown.map((i, k) => (
+          <div key={k} style={{ display: 'flex', gap: 12, padding: '7px 0', fontSize: 15, borderBottom: '1px solid var(--color-divider)' }}>
+            <span style={{ width: 76, flex: 'none', fontWeight: 700, color: 'var(--color-accent-700)' }}>{ingList({ ...r, ing: [i] }, r.p)[0]?.q}</span>
+            <span>{i[2]}</span>
+          </div>
+        ))}
+        {r.ing.length > shown.length && <div className="muted" style={{ fontSize: 13, paddingTop: 8 }}>{(n => `et ${n} autre${n > 1 ? 's' : ''} ingrédient${n > 1 ? 's' : ''}`)(r.ing.length - shown.length)} · {plural(r.steps.length, 'étape')}</div>}
+      </div>
+      {existing ? (
+        <>
+          <div role="status" style={{ fontSize: 14, fontWeight: 600 }}>Cette recette est déjà dans tes recettes.</div>
+          <button className="btn btn-primary" onClick={() => onOpen(existing)} style={{ height: 52, fontSize: 16 }}>Ouvrir la recette</button>
+        </>
+      ) : (
+        <button className="btn btn-primary" disabled={busy} onClick={async () => { setBusy(true); await onAdd(); setBusy(false); }} style={{ height: 52, fontSize: 16 }}>
+          {busy ? 'Un instant…' : 'Ajouter à mes recettes'}
+        </button>
+      )}
+      <button className="btn btn-ghost" onClick={onClose} style={{ alignSelf: 'center', fontSize: 14, marginTop: -6 }}>Non merci</button>
     </Sheet>
   );
 }

@@ -96,3 +96,59 @@ export function useInstall() {
     },
   };
 }
+
+/* ── Recettes perso envoyées par lien (#partage=…) ─────── */
+// Le lien contient toute la recette, compressée. Les photos personnelles n'y sont pas (trop lourdes) :
+// seule une illustration de l'app (r.img) voyage avec la recette.
+const b64url = bytes => { let s = ''; for (const b of bytes) s += String.fromCharCode(b); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+const unb64url = str => { const s = atob(str.replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(s, c => c.charCodeAt(0)); };
+async function pipe(bytes, Stream, mode) {
+  const out = new Blob([bytes]).stream().pipeThrough(new Stream(mode));
+  return new Uint8Array(await new Response(out).arrayBuffer());
+}
+
+export async function recipeShareUrl(r) {
+  const data = { v: 1, n: r.name, c: r.cats, t: r.t, p: r.p, i: r.ing, s: r.steps };
+  if (r.wait) data.w = r.wait;
+  if (r.yield) data.y = r.yield;
+  if (r.img && !r.imgAsset && !r.imgData) data.im = r.img;
+  const raw = new TextEncoder().encode(JSON.stringify(data));
+  let code;
+  try { code = 'z' + b64url(await pipe(raw, CompressionStream, 'deflate-raw')); } catch { code = 'j' + b64url(raw); }
+  return APP_URL + '#partage=' + code;
+}
+
+/** Lien de recette perso dans l'adresse : renvoie le code et nettoie l'adresse. */
+export function takeSharedCode() {
+  if (typeof location === 'undefined') return null;
+  const m = location.hash.match(/partage=([A-Za-z0-9_-]+)/);
+  if (!m) return null;
+  try { history.replaceState(null, '', location.pathname + location.search); } catch { /* adresse figée */ }
+  return m[1];
+}
+
+/** Décode une recette reçue ; null si le lien est abîmé. */
+export async function decodeSharedRecipe(code) {
+  try {
+    if (!code || code.length > 60000) return null;
+    let bytes = unb64url(code.slice(1));
+    if (code[0] === 'z') bytes = await pipe(bytes, DecompressionStream, 'deflate-raw');
+    else if (code[0] !== 'j') return null;
+    const d = JSON.parse(new TextDecoder().decode(bytes));
+    if (d?.v !== 1 || typeof d.n !== 'string' || !Array.isArray(d.i) || !Array.isArray(d.s)) return null;
+    const str = (v, max) => String(v ?? '').slice(0, max);
+    const r = {
+      name: str(d.n, 90).trim() || 'Recette partagée',
+      cats: (Array.isArray(d.c) ? d.c : []).map(c => str(c, 30)).slice(0, 3),
+      t: Math.max(1, Math.round(+d.t) || 30),
+      p: Math.max(1, Math.min(50, Math.round(+d.p) || 4)),
+      ing: d.i.slice(0, 60).filter(Array.isArray).map(([q, u, n]) => [
+        typeof q === 'number' && isFinite(q) ? q : q == null ? null : str(q, 20), str(u, 20), str(n, 120)]).filter(x => x[2].trim()),
+      steps: d.s.slice(0, 40).map(s => str(s, 600).trim()).filter(Boolean),
+    };
+    if (Array.isArray(d.w) && +d.w[0] > 0) r.wait = [Math.round(+d.w[0]), str(d.w[1], 30) || 'de repos'];
+    if (Array.isArray(d.y) && d.y.length === 2) r.yield = d.y.map(x => str(x, 20));
+    if (typeof d.im === 'string' && /^[a-z0-9-]+\.webp$/.test(d.im)) r.img = d.im;
+    return r;
+  } catch { return null; }
+}
