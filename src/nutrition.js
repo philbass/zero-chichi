@@ -85,6 +85,7 @@ const FOODS = [
   [['concentre de tomates'], 90, 4, 16, 0.5],
   [['tomate', 'tomates'], 20, 0.9, 3, 0.2, 120],
   [['pommes pelees', 'pomme', 'pommes'], 55, 0.3, 12.5, 0.2, 150],
+  [['mangues', 'mangue'], 60, 0.8, 13.5, 0.4, 350], // pulpe d'une grosse mangue ≈ 350 g
   [['citron (zeste'], 0, 0, 0, 0],
   [['jus de citron', 'citron'], 25, 0.4, 2.5, 0.2, 40],
   [['orange (zeste'], 0, 0, 0, 0],
