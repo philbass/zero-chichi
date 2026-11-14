@@ -22,6 +22,7 @@ const FOODS = [
   [['tete de veau'], 150, 16, 0, 9.5, 3000], // une tête entière désossée ≈ 3 kg
   [['boeuf'], 130, 21, 0, 5], // bœuf maigre (tête de filet, rumsteck…)
   [['rouelle de porc'], 150, 21, 0, 7],
+  [['poitrine de porc'], 260, 17, 0, 21],
   [['echine de porc'], 230, 18, 0, 17, 215],
   [['travers de porc'], 190, 12, 0, 16], // poids avec os
   [['chair a saucisse'], 300, 14, 1, 27],
@@ -67,6 +68,7 @@ const FOODS = [
   [['pate feuilletee'], 410, 6, 38, 25, 230],
   [['pommes de terre', 'grosses pommes de terre'], 80, 2, 17, 0.1, 150],
   [['pois chiches'], 120, 7, 16, 2.5, 265],
+  [['lentilles'], 330, 24, 47, 1.5], // sèches
   [['marrons'], 170, 2.5, 37, 1.5, 400],
   // Légumes et fruits
   [['oignon', 'oignons', 'gros oignons'], 40, 1.1, 8, 0.2, 110],
@@ -77,6 +79,7 @@ const FOODS = [
   [['celeri'], 15, 0.7, 2, 0.2, 40],
   [['champignons', 'cepes'], 25, 3, 2, 0.4, 20],
   [['chou rouge'], 30, 1.5, 5, 0.2, 900],
+  [['chou frise', 'chou vert'], 30, 2, 4, 0.3, 1200],
   [['chou-fleur'], 25, 2, 3, 0.3, 700],
   [['courgette', 'courgettes'], 18, 1.3, 2.5, 0.3, 200],
   [['aubergines'], 25, 1, 4, 0.2, 280],
