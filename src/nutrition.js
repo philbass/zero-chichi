@@ -59,6 +59,7 @@ const FOODS = [
   [['farine d\'avoine'], 380, 13, 60, 7],
   [['farine'], 345, 10, 72, 1.2],
   [['chapelure'], 380, 12, 75, 3],
+  [['pain', 'baguette'], 270, 9, 55, 1.5, 40], // une tranche de pain rond ≈ 40 g
   [['pate brisee'], 420, 6, 45, 24, 230],
   [['pate feuilletee'], 410, 6, 38, 25, 230],
   [['pommes de terre', 'grosses pommes de terre'], 80, 2, 17, 0.1, 150],
