@@ -54,11 +54,14 @@ export const NEWS_ICONS = {
   sort: ['M3 6h13M3 12h9M3 18h5', 'M18 8v12m0 0-3-3m3 3 3-3'],
 };
 
-const KEY = 'zc:newsSeen';
+const KEY = 'zc:newsSeen'; // carte « Quoi de neuf ? » fermée
+const VISITED = 'zc:newsVisited'; // page « Nouveautés » ouverte
 // Premier lancement de l'app : rien n'est « nouveau » pour quelqu'un qui découvre tout.
 const FIRST_VISIT = (() => { try { return !localStorage.getItem('zc:favs') && !localStorage.getItem(KEY); } catch { return false; } })();
-if (FIRST_VISIT) { try { localStorage.setItem(KEY, NEWS[0].id); } catch { /* stockage indisponible */ } }
+if (FIRST_VISIT) { try { localStorage.setItem(KEY, NEWS[0].id); localStorage.setItem(VISITED, NEWS[0].id); } catch { /* stockage indisponible */ } }
 
 export const latestNews = NEWS[0];
 export const newsSeen = () => { try { return localStorage.getItem(KEY) === NEWS[0].id; } catch { return true; } };
 export const markNewsSeen = () => { try { localStorage.setItem(KEY, NEWS[0].id); } catch { /* stockage indisponible */ } };
+export const newsVisited = () => { try { return localStorage.getItem(VISITED) === NEWS[0].id; } catch { return true; } };
+export const markNewsVisited = () => { try { localStorage.setItem(VISITED, NEWS[0].id); } catch { /* stockage indisponible */ } };

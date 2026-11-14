@@ -7,7 +7,7 @@ import { APP_URL, APP_URL_SHORT, recipeUrl, takeDeepLink, QRCode, shareLink, use
 import RecipeEditor, { CatPicker } from './RecipeEditor.jsx';
 import { renderRecipeCard, cardFilename } from './shareCard.js';
 import { macros } from './nutrition.js';
-import { NEWS, NEWS_ICONS, latestNews, newsSeen, markNewsSeen } from './news.js';
+import { NEWS, NEWS_ICONS, latestNews, newsSeen, markNewsSeen, newsVisited, markNewsVisited } from './news.js';
 import { HeartButton, Confetti, Swipeable, flyDots, withHeroTransition, supportsHeroTransition } from './anim.jsx';
 
 const TINTS = ['accent', 'accent-2', 'neutral'];
@@ -118,6 +118,8 @@ export default function App() {
   /* Nouveautés : carte sur l'accueil après une mise à jour, jusqu'à ce que l'utilisateur la ferme. */
   const [newsUnseen, setNewsUnseen] = useState(() => !newsSeen());
   const seeNews = () => { markNewsSeen(); setNewsUnseen(false); };
+  const [newsNew, setNewsNew] = useState(() => !newsVisited()); // pastille « Nouveau » tant que la page n'a pas été ouverte
+  const openNews = () => { markNewsVisited(); setNewsNew(false); go({ s: 'news' }); };
   useEffect(() => save('favs', favs), [favs]);
   useEffect(() => save('courses', courses), [courses]);
   useEffect(() => { depth.current = stack.length; }, [stack]);
@@ -295,13 +297,13 @@ export default function App() {
             </div>
             {newsUnseen && (
               <div className="screen" style={{ position: 'relative', marginTop: wide ? -12 : -8 }}>
-                <button className="reset press" onClick={() => go({ s: 'news' })}
+                <button className="reset press" onClick={openNews}
                   style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '10px 52px 10px 10px', borderRadius: 24, background: 'var(--color-accent-2-100)' }}>
                   <span style={{ width: 40, height: 40, flex: 'none', borderRadius: '50%', background: 'var(--color-accent-2-200)', color: 'var(--color-accent-2-800)', display: 'grid', placeItems: 'center' }}><Icon d={NEWS_ICONS.sparkle} size={20} sw={2.2} /></span>
                   <span style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span className="h" style={{ fontSize: 16 }}>Quoi de neuf ?</span>
-                      <span style={{ flex: 'none', padding: '2px 8px', borderRadius: 999, background: 'var(--color-accent)', fontSize: 10.5, fontWeight: 700 }}>Nouveau</span>
+                      {newsNew && <span style={{ flex: 'none', padding: '2px 8px', borderRadius: 999, background: 'var(--color-accent)', fontSize: 10.5, fontWeight: 700 }}>Nouveau</span>}
                     </span>
                     <span className="muted" style={{ fontSize: 12 }}>{latestNews.title}</span>
                   </span>
@@ -363,7 +365,7 @@ export default function App() {
               </div>
             </section>
 
-            <button className="btn btn-ghost" onClick={() => go({ s: 'news' })}
+            <button className="btn btn-ghost" onClick={openNews}
               style={{ alignSelf: 'center', fontSize: 13.5, color: 'var(--color-neutral-700)', textDecoration: 'underline', textUnderlineOffset: 3 }}>
               Nouveautés de l'app
             </button>
