@@ -241,7 +241,7 @@ export default function App() {
               <span style={{ width: 40, height: 40, flex: 'none', borderRadius: '50%', background: 'var(--color-accent)', display: 'grid', placeItems: 'center' }}><Icon d="M5 12h14M12 5v14" /></span>
               <span style={{ display: 'flex', flexDirection: 'column' }}>
                 <span className="h" style={{ fontSize: 16 }}>Ajouter une recette perso</span>
-                <span className="muted" style={{ fontSize: 12 }}>Visible seulement sur ton téléphone</span>
+                <span className="muted" style={{ fontSize: 12 }}>{wide ? 'Visible seulement sur cet appareil' : 'Visible seulement sur ton téléphone'}</span>
               </span>
             </button>
             </div>
@@ -515,7 +515,6 @@ export default function App() {
         <nav style={wide
           ? { position: 'absolute', left: 0, top: 0, bottom: 0, width: 104, padding: 'calc(28px + var(--status-h)) 0 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, background: 'var(--color-bg)', boxShadow: '1px 0 0 var(--color-divider)', zIndex: 5 }
           : { flex: 'none', padding: '8px 10px', paddingBottom: 'max(22px, var(--bottom-safe))', display: 'flex', background: 'var(--color-bg)', boxShadow: '0 -1px 0 var(--color-divider)' }}>
-          {wide && <img src={`${BASE}assets/logo-mark.png`} alt="" style={{ width: 52, height: 52, marginBottom: 18 }} />}
           {TABS.map(([k, label]) => {
             const on = rootTab === k;
             return (
