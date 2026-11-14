@@ -115,14 +115,9 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
   const install = useInstall();
-  /* Nouveautés : fenêtre une seule fois après une mise à jour, puis page « Nouveautés ». */
+  /* Nouveautés : carte sur l'accueil après une mise à jour, jusqu'à ce que l'utilisateur la ferme. */
   const [newsUnseen, setNewsUnseen] = useState(() => !newsSeen());
   const seeNews = () => { markNewsSeen(); setNewsUnseen(false); };
-  useEffect(() => {
-    if (!newsUnseen || DEEP || SHARED) return;
-    const t = setTimeout(() => setSheet(sh => sh || { type: 'whatsnew' }), 700);
-    return () => clearTimeout(t);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => save('favs', favs), [favs]);
   useEffect(() => save('courses', courses), [courses]);
   useEffect(() => { depth.current = stack.length; }, [stack]);
@@ -298,15 +293,25 @@ export default function App() {
               </span>
             </button>
             </div>
-            <button className="reset press" onClick={() => { seeNews(); go({ s: 'news' }); }}
-              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px 10px 10px', borderRadius: 24, background: 'var(--color-accent-2-100)', marginTop: wide ? -12 : -8 }}>
-              <span style={{ width: 40, height: 40, flex: 'none', borderRadius: '50%', background: 'var(--color-accent-2-200)', color: 'var(--color-accent-2-800)', display: 'grid', placeItems: 'center' }}><Icon d={NEWS_ICONS.sparkle} size={20} sw={2.2} /></span>
-              <span style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-                <span className="h" style={{ fontSize: 16 }}>Quoi de neuf ?</span>
-                <span className="muted" style={{ fontSize: 12 }}>{latestNews.title}</span>
-              </span>
-              {newsUnseen && <span style={{ flex: 'none', padding: '3px 9px', borderRadius: 999, background: 'var(--color-accent)', fontSize: 11, fontWeight: 700 }}>Nouveau</span>}
-            </button>
+            {newsUnseen && (
+              <div className="screen" style={{ position: 'relative', marginTop: wide ? -12 : -8 }}>
+                <button className="reset press" onClick={() => go({ s: 'news' })}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '10px 52px 10px 10px', borderRadius: 24, background: 'var(--color-accent-2-100)' }}>
+                  <span style={{ width: 40, height: 40, flex: 'none', borderRadius: '50%', background: 'var(--color-accent-2-200)', color: 'var(--color-accent-2-800)', display: 'grid', placeItems: 'center' }}><Icon d={NEWS_ICONS.sparkle} size={20} sw={2.2} /></span>
+                  <span style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span className="h" style={{ fontSize: 16 }}>Quoi de neuf ?</span>
+                      <span style={{ flex: 'none', padding: '2px 8px', borderRadius: 999, background: 'var(--color-accent)', fontSize: 10.5, fontWeight: 700 }}>Nouveau</span>
+                    </span>
+                    <span className="muted" style={{ fontSize: 12 }}>{latestNews.title}</span>
+                  </span>
+                </button>
+                <button className="icon-btn" onClick={seeNews} aria-label="Fermer « Quoi de neuf ? »"
+                  style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', width: 38, height: 38, color: 'var(--color-accent-2-800)' }}>
+                  <CloseIcon size={16} />
+                </button>
+              </div>
+            )}
 
             <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
@@ -357,6 +362,11 @@ export default function App() {
                 ))}
               </div>
             </section>
+
+            <button className="btn btn-ghost" onClick={() => go({ s: 'news' })}
+              style={{ alignSelf: 'center', fontSize: 13.5, color: 'var(--color-neutral-700)', textDecoration: 'underline', textUnderlineOffset: 3 }}>
+              Nouveautés de l'app
+            </button>
 
           </div>
         )}
@@ -571,10 +581,6 @@ export default function App() {
       )}
       {sheet?.type === 'app' && <AppShareSheet onClose={() => setSheet(null)} flash={flash} />}
       {sheet?.type === 'install' && <InstallSheet onClose={() => setSheet(null)} />}
-      {sheet?.type === 'whatsnew' && (
-        <WhatsNewSheet recipes={recipes} onClose={() => { seeNews(); setSheet(null); }}
-          onAll={() => { seeNews(); setSheet(null); go({ s: 'news' }); }} />
-      )}
       {sheet?.type === 'incoming' && (
         <IncomingSheet r={sheet.r}
           existing={recipes.find(x => x.custom && x.name === sheet.r.name && JSON.stringify(x.ing) === JSON.stringify(sheet.r.ing))}
@@ -1064,32 +1070,6 @@ function NewsView({ recipes, wide, onBack, onOpen, onAction }) {
         );
       })}
     </div>
-  );
-}
-
-function WhatsNewSheet({ recipes, onClose, onAll }) {
-  const n = latestNews;
-  const tops = n.groups.flatMap(g => g.items).filter(it => it.top);
-  const fresh = newRecipesOf(recipes, n);
-  return (
-    <Sheet title="Quoi de neuf ?" onClose={onClose}>
-      <div className="muted" style={{ fontSize: 14, marginTop: -8 }}>Mise à jour du {fmtDate(n.date)}</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {tops.map(it => <NewsItem key={it.title} it={it} />)}
-      </div>
-      {fresh.length > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ display: 'flex' }}>
-            {fresh.slice(0, 4).map((r, k) => (
-              <div key={r.id} style={{ width: 44, height: 44, borderRadius: '50%', marginLeft: k ? -12 : 0, border: '2px solid var(--color-bg)', background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 3 }} />
-            ))}
-          </div>
-          <div style={{ fontSize: 14, fontWeight: 700 }}>+ {(fresh.length > 1 ? fresh.length + ' nouvelles recettes' : '1 nouvelle recette')}</div>
-        </div>
-      )}
-      <button className="btn btn-primary" onClick={onAll} style={{ height: 52, fontSize: 16 }}>Voir toutes les nouveautés</button>
-      <button className="btn btn-ghost" onClick={onClose} style={{ alignSelf: 'center', fontSize: 14, marginTop: -6 }}>Plus tard</button>
-    </Sheet>
   );
 }
 
