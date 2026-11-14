@@ -53,7 +53,7 @@ export default function RecipeEditor({ initial, cats, onAddCat, onSave, onDelete
   const pickImage = async (file, cut) => {
     if (!file) return;
     try {
-      const blob = await prepareIllustration(file, cut);
+      const blob = await prepareIllustration(file, cut, cut);
       setImage({ mode: 'new', file, blob, url: URL.createObjectURL(blob), cut });
     } catch { setError("Impossible d'ouvrir cette image. Essaie un fichier JPG ou PNG."); }
   };
@@ -175,7 +175,7 @@ export default function RecipeEditor({ initial, cats, onAddCat, onSave, onDelete
                 {image.mode === 'new' && (
                   <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                     <input id="recipe-illus-cut" type="checkbox" checked={image.cut} onChange={e => pickImage(image.file, e.target.checked)} />
-                    Retirer le fond blanc
+                    Retirer le fond et le titre
                   </label>
                 )}
                 {currentUrl && (
