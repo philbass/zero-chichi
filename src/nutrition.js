@@ -7,7 +7,7 @@ import { norm } from './lib.js';
 const FOODS = [
   // À ne pas compter (eau, sel, épices en très petite quantité)
   [['eau'], 0, 0, 0, 0],
-  [['gros sel', 'sel', 'poivre', 'muscade', '4-epices', 'quatre-epices', 'bois d\'inde', 'clous de girofle', 'laurier', 'thym', 'herbes de provence', 'bouquet garni', 'sauge', 'estragon', 'cannelle', 'paprika', 'extrait de vanille', 'levure chimique'], 0, 0, 0, 0],
+  [['gros sel', 'sel', 'poivre', 'muscade', '4-epices', 'quatre-epices', 'bois d\'inde', 'clous de girofle', 'laurier', 'thym', 'herbes de provence', 'bouquet garni', 'sauge', 'estragon', 'cannelle', 'paprika', 'extrait de vanille', 'levure chimique', 'tabasco'], 0, 0, 0, 0],
   // Viandes et poissons
   [['ailerons de poulet'], 150, 12, 0, 11, 45], // poids avec os
   [['cuisses de poulet'], 150, 14, 0, 10, 250], // poids avec os
@@ -18,6 +18,7 @@ const FOODS = [
   [['joue de boeuf'], 160, 21, 0, 8.5],
   [['queue de boeuf'], 140, 11, 0, 11], // poids avec os
   [['langue de boeuf'], 220, 15, 0, 18],
+  [['boeuf'], 130, 21, 0, 5], // bœuf maigre (tête de filet, rumsteck…)
   [['echine de porc'], 230, 18, 0, 17, 215],
   [['travers de porc'], 190, 12, 0, 16], // poids avec os
   [['chair a saucisse'], 300, 14, 1, 27],
@@ -98,6 +99,8 @@ const FOODS = [
   [['tahini'], 620, 18, 10, 55],
   [['pesto'], 500, 5, 6, 50],
   [['moutarde'], 150, 7, 4, 11],
+  [['ketchup'], 110, 1.2, 25, 0.1],
+  [['sauce worcestershire', 'worcestershire'], 80, 0, 19, 0],
   [['vinaigre balsamique'], 100, 0.5, 20, 0],
   [['vinaigre'], 20, 0, 1, 0],
   [['sauce soja', 'sauce d\'huitre'], 60, 7, 6, 0],
