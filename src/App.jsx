@@ -40,8 +40,31 @@ const SearchIcon = props => <Icon d={['M11 3a8 8 0 1 0 0 16a8 8 0 1 0 0-16', 'm2
 const BackIcon = props => <Icon d="m15 18-6-6 6-6" {...props} />;
 const CloseIcon = props => <Icon d="M18 6 6 18M6 6l12 12" {...props} />;
 
+/* Tablette (écran tactile d'au moins 700 px de large) : 'land' en paysage large, 'port' sinon. */
+const TABLET_MQ = '(min-width: 700px) and (pointer: coarse)';
+function useTablet() {
+  const get = () => {
+    if (typeof window === 'undefined') return null;
+    const forced = /[?&]tablette\b/.test(location.search);
+    if (!forced && !matchMedia(TABLET_MQ).matches) return null;
+    return innerWidth >= 960 ? 'land' : 'port';
+  };
+  const [mode, setMode] = useState(get);
+  useEffect(() => {
+    const f = () => setMode(get());
+    const mq = matchMedia(TABLET_MQ);
+    mq.addEventListener?.('change', f); addEventListener('resize', f);
+    return () => { mq.removeEventListener?.('change', f); removeEventListener('resize', f); };
+  }, []);
+  useEffect(() => { document.documentElement.classList.toggle('tablet', !!mode); }, [mode]);
+  return mode;
+}
+
 /* ── application ─────────────────────────────────────────── */
 export default function App() {
+  const tablet = useTablet();
+  const wide = !!tablet;
+  const PADX = wide ? 40 : 22;
   const { recipes, categories, addCategory, removeCategory, setCats, updateRecipe, resetRecipe, deleteRecipe } = useRecipeStore();
   const addCat = async name => { const n = await addCategory(name).catch(() => null); if (n) flash('Catégorie « ' + n + ' » prête'); return n; };
   const byId = id => recipes.find(r => r.id === id);
@@ -200,26 +223,28 @@ export default function App() {
         <FakeStatus />
       </div>
 
-      <div className="scroll" ref={scrollRef}>
+      <div className="scroll" ref={scrollRef} style={wide && !isRecipe && !isEditor ? { marginLeft: 104 } : undefined}>
         {/* ── Accueil ── */}
         {s === 'home' && (
-          <div className="screen" style={{ padding: '12px 22px 28px', display: 'flex', flexDirection: 'column', gap: 22 }}>
+          <div className="screen" style={{ padding: wide ? '28px 40px 40px' : '12px 22px 28px', display: 'flex', flexDirection: 'column', gap: wide ? 28 : 22 }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <img src={`${BASE}assets/logo-zero-chichi.png`} alt="Zéro Chichi" style={{ height: 64, width: 'auto', alignSelf: 'flex-start' }} />
               <div className="muted" style={{ fontSize: 14 }}>Des recettes courtes. Rien de plus.</div>
             </div>
+            <div style={wide ? { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 14, alignItems: 'center' } : { display: 'contents' }}>
             <button className="reset press" onClick={() => tab('search')}
               style={{ display: 'flex', alignItems: 'center', gap: 10, height: 50, padding: '0 18px', borderRadius: 999, border: '1px solid var(--color-divider)', background: 'var(--color-surface)', fontSize: 15, color: 'var(--color-neutral-700)' }}>
               <SearchIcon />Une recette, un ingrédient…
             </button>
             <button className="reset press" onClick={() => go({ s: 'new' })}
-              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px 10px 10px', borderRadius: 24, background: 'var(--color-accent-100)', marginTop: -8 }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px 10px 10px', borderRadius: 24, background: 'var(--color-accent-100)', marginTop: wide ? 0 : -8 }}>
               <span style={{ width: 40, height: 40, flex: 'none', borderRadius: '50%', background: 'var(--color-accent)', display: 'grid', placeItems: 'center' }}><Icon d="M5 12h14M12 5v14" /></span>
               <span style={{ display: 'flex', flexDirection: 'column' }}>
                 <span className="h" style={{ fontSize: 16 }}>Ajouter une recette perso</span>
                 <span className="muted" style={{ fontSize: 12 }}>Visible seulement sur ton téléphone</span>
               </span>
             </button>
+            </div>
 
             <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
@@ -227,7 +252,7 @@ export default function App() {
                 <button className="btn btn-ghost" onClick={() => go({ s: 'cats' })}
                   style={{ textDecoration: 'underline', textUnderlineOffset: 3, fontSize: 14, whiteSpace: 'nowrap', flex: 'none' }}>Tout voir</button>
               </div>
-              <div className="hscroll cascade" style={{ gap: 8 }}>
+              <div className={(wide ? 'wrap-row' : 'hscroll') + ' cascade'} style={{ gap: 8 }}>
                 {catTiles.map(c => (
                   <button key={c.name} className="reset press" onClick={() => openCat(c.name)}
                     style={{ flex: 'none', height: 40, padding: '0 16px', borderRadius: 999, background: c.bg, color: c.fg, fontSize: 14, fontWeight: 600 }}>
@@ -239,11 +264,11 @@ export default function App() {
 
             <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <h2 className="h" style={{ fontSize: 20, margin: 0 }}>Dernières recettes</h2>
-              <div className="hscroll cascade" style={{ gap: 12, paddingBottom: 4 }}>
+              <div className={wide ? 'cascade' : 'hscroll cascade'} style={wide ? { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 18 } : { gap: 12, paddingBottom: 4 }}>
                 {latest.map(r => (
                   <button key={r.id} className="reset press" onClick={e => openRecipe(r, e)}
-                    style={{ flex: 'none', width: 180, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div data-thumb className="illus" style={{ width: '100%', height: 150, borderRadius: 28, background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 16 }} />
+                    style={{ flex: 'none', width: wide ? 'auto' : 180, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div data-thumb className="illus" style={{ width: '100%', height: wide ? 170 : 150, borderRadius: 28, background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 16 }} />
                     <div className="h" style={{ fontSize: 16, lineHeight: 1.2 }}>{r.name}</div>
                     <div className="muted" style={{ fontSize: 12, marginTop: -6 }}>{meta(r)}</div>
                   </button>
@@ -259,11 +284,11 @@ export default function App() {
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4" /><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" /><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" /><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor" /><circle cx="8.5" cy="15.5" r="1.3" fill="currentColor" /></svg>
                 </button>
               </div>
-              <div className="hscroll" style={{ gap: 12, paddingBottom: 4 }}>
+              <div className={wide ? '' : 'hscroll'} style={wide ? { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 18 } : { gap: 12, paddingBottom: 4 }}>
                 {random3.map(r => (
                   <button key={rolling + '-' + r.id} className="reset press flip-in" onClick={e => openRecipe(r, e)}
-                    style={{ flex: 'none', width: 180, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div data-thumb className="illus" style={{ width: '100%', height: 150, borderRadius: 28, background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 16 }} />
+                    style={{ flex: 'none', width: wide ? 'auto' : 180, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div data-thumb className="illus" style={{ width: '100%', height: wide ? 170 : 150, borderRadius: 28, background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 16 }} />
                     <div className="h" style={{ fontSize: 16, lineHeight: 1.2 }}>{r.name}</div>
                     <div className="muted" style={{ fontSize: 12, marginTop: -6 }}>{meta(r)}</div>
                   </button>
@@ -276,7 +301,7 @@ export default function App() {
 
         {/* ── En-tête de liste ── */}
         {showListHeader && (
-          <div className="screen" style={{ padding: '8px 22px 0', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="screen" style={{ padding: `${wide ? 24 : 8}px ${PADX}px 0`, display: 'flex', flexDirection: 'column', gap: 14 }}>
             {stack.length > 1 && (
               <button className="icon-btn" onClick={back} aria-label="Retour" style={{ alignSelf: 'flex-start', marginLeft: -8 }}>
                 <BackIcon size={24} />
@@ -291,7 +316,7 @@ export default function App() {
 
         {/* ── Recherche ── */}
         {s === 'search' && (
-          <div className="screen" style={{ padding: '14px 22px 0', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div className="screen" style={{ padding: `${wide ? 28 : 14}px ${PADX}px 0`, display: 'flex', flexDirection: 'column', gap: 12, maxWidth: wide ? 760 : undefined }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, height: 50, padding: '0 16px', borderRadius: 999, border: '2px solid var(--color-accent)', background: 'var(--color-surface)' }}>
               <SearchIcon stroke="var(--color-accent-700)" />
               <input ref={inputRef} value={q} onChange={e => setQ(e.target.value)} placeholder="Pâtes, œufs, chocolat…"
@@ -314,7 +339,7 @@ export default function App() {
 
         {/* ── Grille des catégories ── */}
         {showCatsGrid && (
-          <div className="cascade" style={{ padding: '16px 22px 28px', display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 10 }}>
+          <div className="cascade" style={{ padding: `16px ${PADX}px 28px`, display: 'grid', gridTemplateColumns: wide ? 'repeat(auto-fill, minmax(190px, 1fr))' : 'repeat(2,minmax(0,1fr))', gap: wide ? 14 : 10 }}>
             {catTiles.map(c => (
               <button key={c.name} className="reset press" onClick={() => openCat(c.name)}
                 style={{ height: 96, padding: '14px 16px', borderRadius: 28, background: c.bg, color: c.fg, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -334,7 +359,7 @@ export default function App() {
 
         {/* ── Lignes de recettes ── */}
         {showRows && (
-          <div className="cascade" style={{ padding: '16px 22px 28px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="cascade" style={wide ? { padding: `16px ${PADX}px 32px`, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(330px, 1fr))', gap: 12 } : { padding: '16px 22px 28px', display: 'flex', flexDirection: 'column', gap: 10 }}>
             {rows.map(r => {
               const fav = favs.includes(r.id);
               const row = (
@@ -354,7 +379,7 @@ export default function App() {
                 : <div key={r.id}>{row}</div>;
             })}
             {!rows.length && (
-              <div style={{ padding: '40px 12px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>
+              <div style={{ padding: '40px 12px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center', gridColumn: '1 / -1' }}>
                 <div className="h" style={{ fontSize: 20 }}>{emptyTitle}</div>
                 <div className="muted" style={{ fontSize: 14, maxWidth: 260 }}>{emptyText}</div>
                 {s === 'list' && !CORE_CATS.includes(top.cat) && (
@@ -370,7 +395,7 @@ export default function App() {
 
         {/* ── Fiche recette ── */}
         {isRecipe && (
-          <RecipeView r={recipe} fav={favs.includes(recipe.id)} portions={portions} setPortions={setPortions}
+          <RecipeView r={recipe} land={tablet === 'land'} wide={wide} fav={favs.includes(recipe.id)} portions={portions} setPortions={setPortions}
             onBack={back} onFav={() => toggleFav(recipe.id)}
             onShare={() => setSheet({ type: 'share', id: recipe.id })}
             onCats={() => setSheet({ type: 'cats', id: recipe.id })}
@@ -379,6 +404,7 @@ export default function App() {
 
         {/* ── Nouvelle recette / modification ── */}
         {isEditor && (
+          <div style={wide ? { maxWidth: 760, margin: '0 auto' } : { display: 'contents' }}>
           <RecipeEditor key={top.id || 'new'} initial={s === 'edit' ? byId(top.id) : null} cats={categories} onAddCat={addCat} onBack={back}
             onSave={async (fields, image) => {
               const orig = s === 'edit' ? byId(top.id) : null;
@@ -398,11 +424,12 @@ export default function App() {
               setFavs(f => f.filter(x => x !== id));
               tab('home'); flash('Recette supprimée');
             }} />
+          </div>
         )}
 
         {/* ── Courses ── */}
         {s === 'courses' && (
-          <div className="screen" style={{ padding: '8px 22px 28px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="screen" style={{ padding: wide ? '24px 40px 40px' : '8px 22px 28px', display: 'flex', flexDirection: 'column', gap: 14, maxWidth: wide ? 720 : undefined }}>
             <div>
               <h1 className="h" style={{ fontSize: 32, lineHeight: 1.1, margin: 0 }}>Courses</h1>
               <div className="muted" style={{ fontSize: 13 }}>{courses.length ? plural(left, 'article') + ' à acheter' : ''}</div>
@@ -447,18 +474,18 @@ export default function App() {
 
       {/* ── Barre d'actions de la fiche ── */}
       {isRecipe && (
-        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '14px 18px', paddingBottom: 'max(28px, calc(14px + var(--bottom-safe)))', display: 'flex', gap: 10, background: 'var(--color-bg)', boxShadow: '0 -8px 24px color-mix(in srgb, var(--color-neutral-900) 8%, transparent)', zIndex: 10 }}>
-          <button ref={cartBtnRef} key={cartBump?.key || 0} className={'btn btn-secondary' + (cartBump ? ' jiggle' : '')} onClick={() => addCourses(recipe)} style={{ flex: 1, height: 52, fontSize: 15, position: 'relative' }}>
+        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '14px 18px', paddingBottom: 'max(28px, calc(14px + var(--bottom-safe)))', display: 'flex', gap: 10, justifyContent: wide ? 'flex-end' : undefined, paddingInline: wide ? 40 : undefined, background: 'var(--color-bg)', boxShadow: '0 -8px 24px color-mix(in srgb, var(--color-neutral-900) 8%, transparent)', zIndex: 10 }}>
+          <button ref={cartBtnRef} key={cartBump?.key || 0} className={'btn btn-secondary' + (cartBump ? ' jiggle' : '')} onClick={() => addCourses(recipe)} style={{ flex: wide ? 'none' : 1, width: wide ? 220 : undefined, height: 52, fontSize: 15, position: 'relative' }}>
             + Aux courses
             {cartBump && <span className="count-pop" aria-hidden="true">+{cartBump.n}</span>}
           </button>
-          <button className="btn btn-primary" onClick={() => go({ s: 'cook', id: recipe.id })} style={{ flex: 1.2, height: 52, fontSize: 16 }}>Cuisiner</button>
+          <button className="btn btn-primary" onClick={() => go({ s: 'cook', id: recipe.id })} style={{ flex: wide ? 'none' : 1.2, width: wide ? 280 : undefined, height: 52, fontSize: 16 }}>Cuisiner</button>
         </div>
       )}
 
       {/* ── Mode cuisine ── */}
       {isCook && (
-        <CookView r={recipe} step={step} setStep={setStep} onClose={back} T={T} onOpenTimer={openTimer}
+        <CookView r={recipe} wide={wide} portions={portions} step={step} setStep={setStep} onClose={back} T={T} onOpenTimer={openTimer}
           onDone={() => { back(); flash('Bon appétit'); setConfetti(true); }} />
       )}
 
@@ -485,13 +512,16 @@ export default function App() {
 
       {/* ── Onglets ── */}
       {!isRecipe && !isEditor && (
-        <nav style={{ flex: 'none', padding: '8px 10px', paddingBottom: 'max(22px, var(--bottom-safe))', display: 'flex', background: 'var(--color-bg)', boxShadow: '0 -1px 0 var(--color-divider)' }}>
+        <nav style={wide
+          ? { position: 'absolute', left: 0, top: 0, bottom: 0, width: 104, padding: 'calc(28px + var(--status-h)) 0 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, background: 'var(--color-bg)', boxShadow: '1px 0 0 var(--color-divider)', zIndex: 5 }
+          : { flex: 'none', padding: '8px 10px', paddingBottom: 'max(22px, var(--bottom-safe))', display: 'flex', background: 'var(--color-bg)', boxShadow: '0 -1px 0 var(--color-divider)' }}>
+          {wide && <img src={`${BASE}assets/logo-mark.png`} alt="" style={{ width: 52, height: 52, marginBottom: 18 }} />}
           {TABS.map(([k, label]) => {
             const on = rootTab === k;
             return (
               <button key={k} className="reset" onClick={() => tab(k)} aria-current={on ? 'page' : undefined}
-                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, color: on ? 'var(--color-accent-700)' : 'var(--color-neutral-600)', fontSize: 11, fontWeight: 700, height: 54, justifyContent: 'center' }}>
-                <div style={{ width: 58, height: 30, borderRadius: 999, background: on && IS_ANDROID ? 'var(--color-accent-200)' : 'transparent', display: 'grid', placeItems: 'center', transition: 'background-color .15s' }}>
+                style={{ flex: wide ? 'none' : 1, width: wide ? 88 : undefined, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, color: on ? 'var(--color-accent-700)' : 'var(--color-neutral-600)', fontSize: 11, fontWeight: 700, height: 54, justifyContent: 'center' }}>
+                <div style={{ width: 58, height: 30, borderRadius: 999, background: on && (IS_ANDROID || wide) ? 'var(--color-accent-200)' : 'transparent', display: 'grid', placeItems: 'center', transition: 'background-color .15s' }}>
                   <span style={{ position: 'relative', display: 'grid' }}>
                     <Icon d={ICONS[k]} size={22} />
                     {k === 'courses' && left > 0 && <span key={left} className="tab-badge">{left}</span>}
@@ -540,68 +570,86 @@ function ChipRow({ label, options, value, onChange, render }) {
   );
 }
 
-function RecipeView({ r, fav, portions, setPortions, onBack, onFav, onShare, onCats, onEdit }) {
+function RecipeView({ r, land, wide, fav, portions, setPortions, onBack, onFav, onShare, onCats, onEdit }) {
   const ing = ingList(r, portions);
-  return (
-    <div className="screen" style={{ display: 'flex', flexDirection: 'column', paddingBottom: 'calc(110px + var(--bottom-safe))' }}>
-      <div className={supportsHeroTransition() ? '' : 'hero-in'} style={{ viewTransitionName: 'zc-hero', position: 'relative', height: 'calc(min(96vw, 380px) + var(--status-h))', marginTop: 'calc(-1 * var(--status-h))', borderRadius: '0 0 40px 40px', background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 'calc(58px + var(--status-h)) 10px 14px' }}>
-        {!imgUrl(r) && <div style={{ position: 'absolute', bottom: 16, left: 22, font: '500 10px ui-monospace,Menlo,monospace', color: 'var(--color-neutral-700)' }}>illustration du plat</div>}
-        <div style={{ position: 'absolute', top: 'calc(10px + var(--status-h))', left: 16, right: 16, display: 'flex', justifyContent: 'space-between' }}>
-          <button className="icon-btn raised" onClick={onBack} aria-label="Retour"><BackIcon size={22} /></button>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button className="icon-btn raised" onClick={onShare} aria-label="Partager en image"><Icon d={SHARE} /></button>
-            <HeartButton className="icon-btn raised" fav={fav} onToggle={onFav} />
-          </div>
+  const px = land ? 0 : wide ? 40 : 22;
+  const hero = (
+    <div className={supportsHeroTransition() ? '' : 'hero-in'} style={{ viewTransitionName: 'zc-hero', position: 'relative', background: illus(r, 'accent-2'), backgroundOrigin: 'content-box',
+      ...(land
+        ? { height: 'min(46vh, 360px)', borderRadius: 40, padding: '62px 20px 20px' }
+        : { height: `calc(min(96vw, ${wide ? 460 : 380}px) + var(--status-h))`, marginTop: 'calc(-1 * var(--status-h))', borderRadius: '0 0 40px 40px', padding: 'calc(58px + var(--status-h)) 10px 14px' }) }}>
+      {!imgUrl(r) && <div style={{ position: 'absolute', bottom: 16, left: 22, font: '500 10px ui-monospace,Menlo,monospace', color: 'var(--color-neutral-700)' }}>illustration du plat</div>}
+      <div style={{ position: 'absolute', top: land ? 12 : 'calc(10px + var(--status-h))', left: 16, right: 16, display: 'flex', justifyContent: 'space-between' }}>
+        <button className="icon-btn raised" onClick={onBack} aria-label="Retour"><BackIcon size={22} /></button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button className="icon-btn raised" onClick={onShare} aria-label="Partager en image"><Icon d={SHARE} /></button>
+          <HeartButton className="icon-btn raised" fav={fav} onToggle={onFav} />
         </div>
       </div>
-      <div style={{ padding: '20px 22px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <h1 className="h" style={{ fontSize: 30, lineHeight: 1.1, margin: 0 }}>{r.name}</h1>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          <span className="tag tag-accent-2">{fmtT(r.t)}</span>
-          {waitLabel(r) && <span className="tag tag-neutral">+ {waitLabel(r)}</span>}
-          <span className="tag tag-accent">{r.ing.length} ingrédients</span>
-          <span className={'tag ' + ({ Facile: 'tag-accent-2', Moyen: 'tag-accent', Long: 'tag-neutral' })[difficulty(r)]}>{difficulty(r)}</span>
-          {r.cats.map(c => <span key={c} className="tag tag-neutral">{c}</span>)}
-          <button className="reset tag" onClick={onCats} aria-label="Modifier les catégories"
-            style={{ border: '1px dashed var(--color-neutral-500)', gap: 4, cursor: 'pointer' }}>
-            <Icon d={PENCIL} size={12} sw={2.5} />Catégories
-          </button>
-        </div>
-        {addedOf(r) && <div className="muted" style={{ fontSize: 13 }}>Ajoutée le {fmtDate(addedOf(r))}</div>}
-        <MacrosCard r={r} />
-        {onEdit && (
-          <button className="btn btn-ghost" onClick={onEdit} style={{ alignSelf: 'flex-start', textDecoration: 'underline', textUnderlineOffset: 3, fontSize: 14, marginTop: -2 }}>
-            Modifier la recette
-          </button>
-        )}
+    </div>
+  );
+  const head = (
+    <div style={{ padding: `20px ${px}px 0`, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <h1 className="h" style={{ fontSize: wide ? 34 : 30, lineHeight: 1.1, margin: 0 }}>{r.name}</h1>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <span className="tag tag-accent-2">{fmtT(r.t)}</span>
+        {waitLabel(r) && <span className="tag tag-neutral">+ {waitLabel(r)}</span>}
+        <span className="tag tag-accent">{r.ing.length} ingrédients</span>
+        <span className={'tag ' + ({ Facile: 'tag-accent-2', Moyen: 'tag-accent', Long: 'tag-neutral' })[difficulty(r)]}>{difficulty(r)}</span>
+        {r.cats.map(c => <span key={c} className="tag tag-neutral">{c}</span>)}
+        <button className="reset tag" onClick={onCats} aria-label="Modifier les catégories"
+          style={{ border: '1px dashed var(--color-neutral-500)', gap: 4, cursor: 'pointer' }}>
+          <Icon d={PENCIL} size={12} sw={2.5} />Catégories
+        </button>
       </div>
-
-      <div style={{ padding: '22px 22px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <h2 className="h" style={{ fontSize: 20, margin: 0 }}>Ingrédients</h2>
+      {addedOf(r) && <div className="muted" style={{ fontSize: 13 }}>Ajoutée le {fmtDate(addedOf(r))}</div>}
+      <MacrosCard r={r} />
+      {onEdit && (
+        <button className="btn btn-ghost" onClick={onEdit} style={{ alignSelf: 'flex-start', textDecoration: 'underline', textUnderlineOffset: 3, fontSize: 14, marginTop: -2 }}>
+          Modifier la recette
+        </button>
+      )}
+    </div>
+  );
+  const body = (
+    <>
+      <div style={{ padding: `${land ? 0 : 22}px ${px}px 0`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h2 className="h" style={{ fontSize: wide ? 24 : 20, margin: 0 }}>Ingrédients</h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: 3, borderRadius: 999, background: 'var(--color-surface)' }}>
           <StepperBtn label="Moins" d="M5 12h14" onClick={() => setPortions(p => Math.max(1, p - 1))} />
           <span style={{ minWidth: 74, padding: '0 4px', textAlign: 'center', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }} aria-live="polite">{portionLabel(r, portions)}</span>
           <StepperBtn label="Plus" d="M5 12h14M12 5v14" onClick={() => setPortions(p => Math.min(Math.max(12, r.p * 2), p + 1))} />
         </div>
       </div>
-      <div style={{ padding: '12px 22px 0', display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <div style={{ padding: `12px ${px}px 0`, display: wide ? 'grid' : 'flex', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', columnGap: 28, flexDirection: 'column', gap: wide ? undefined : 2 }}>
         {ing.map((i, k) => (
-          <div key={k} data-ing style={{ display: 'flex', gap: 12, padding: '9px 0', fontSize: 16, borderBottom: '1px solid var(--color-divider)' }}>
+          <div key={k} data-ing style={{ display: 'flex', gap: 12, padding: '9px 0', fontSize: wide ? 17 : 16, borderBottom: '1px solid var(--color-divider)' }}>
             <span style={{ width: 84, flex: 'none', fontWeight: 700, color: 'var(--color-accent-700)' }}>{i.q}</span>
             <span>{i.n}</span>
           </div>
         ))}
       </div>
 
-      <h2 className="h" style={{ padding: '26px 22px 0', fontSize: 20, margin: 0 }}>Étapes</h2>
-      <ol style={{ listStyle: 'none', margin: 0, padding: '12px 22px 0', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <h2 className="h" style={{ padding: `26px ${px}px 0`, fontSize: wide ? 24 : 20, margin: 0 }}>Étapes</h2>
+      <ol style={{ listStyle: 'none', margin: 0, padding: `12px ${px}px 0`, display: 'flex', flexDirection: 'column', gap: wide ? 16 : 12 }}>
         {r.steps.map((t, k) => (
           <li key={k} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
             <div className="h" style={{ width: 32, height: 32, flex: 'none', borderRadius: '50%', background: 'var(--color-accent-2-200)', color: 'var(--color-accent-2-800)', display: 'grid', placeItems: 'center', fontSize: 15 }}>{k + 1}</div>
-            <div style={{ fontSize: 16, lineHeight: 1.45, paddingTop: 4 }}>{t}</div>
+            <div style={{ fontSize: wide ? 18 : 16, lineHeight: 1.45, paddingTop: 4 }}>{t}</div>
           </li>
         ))}
       </ol>
+    </>
+  );
+  if (land) return (
+    <div className="screen" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 5fr) minmax(0, 6fr)', gap: 44, alignItems: 'start', padding: 'calc(20px + var(--status-h)) 40px calc(110px + var(--bottom-safe))' }}>
+      <div style={{ position: 'sticky', top: 20 }}>{hero}{head}</div>
+      <div style={{ paddingTop: 8 }}>{body}</div>
+    </div>
+  );
+  return (
+    <div className="screen" style={{ display: 'flex', flexDirection: 'column', paddingBottom: 'calc(110px + var(--bottom-safe))' }}>
+      {hero}{head}{body}
     </div>
   );
 }
@@ -636,7 +684,7 @@ function StepperBtn({ label, d, onClick }) {
   );
 }
 
-function CookView({ r, step, setStep, onClose, onDone, T, onOpenTimer }) {
+function CookView({ r, wide, portions, step, setStep, onClose, onDone, T, onOpenTimer }) {
   const n = r.steps.length;
   const i = Math.min(step, n - 1);
   const last = i === n - 1;
@@ -657,7 +705,20 @@ function CookView({ r, step, setStep, onClose, onDone, T, onOpenTimer }) {
   }, []);
 
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 20, background: 'var(--color-accent-2-700)', color: 'var(--color-bg)', padding: '24px 24px 34px', paddingTop: 'calc(12px + var(--status-h))', paddingBottom: 'max(34px, calc(14px + var(--bottom-safe)))', display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ position: 'absolute', inset: 0, zIndex: 20, background: 'var(--color-accent-2-700)', color: 'var(--color-bg)', padding: wide ? '28px 40px' : '24px 24px 34px', paddingTop: `calc(${wide ? 28 : 12}px + var(--status-h))`, paddingBottom: 'max(34px, calc(14px + var(--bottom-safe)))', display: 'flex', gap: 40 }}>
+      {wide && (
+        <aside style={{ width: 300, flex: 'none', alignSelf: 'stretch', overflowY: 'auto', scrollbarWidth: 'none', borderRadius: 28, background: 'var(--color-accent-2-800)', padding: '22px 22px 12px', display: 'flex', flexDirection: 'column' }}>
+          <div className="h" style={{ fontSize: 22, marginBottom: 2 }}>Ingrédients</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-accent-2-200)', marginBottom: 10 }}>{portionLabel(r, portions)}</div>
+          {ingList(r, portions).map((it, k) => (
+            <div key={k} style={{ display: 'flex', gap: 10, padding: '8px 0', fontSize: 15, borderBottom: '1px solid var(--color-accent-2-600)' }}>
+              <span style={{ width: 72, flex: 'none', fontWeight: 700, color: 'var(--color-accent-2-200)' }}>{it.q}</span>
+              <span>{it.n}</span>
+            </div>
+          ))}
+        </aside>
+      )}
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ fontSize: 14, fontWeight: 700 }}>Étape {i + 1} sur {n}</div>
         <button className="icon-btn" onClick={onClose} aria-label="Fermer" style={{ background: 'var(--color-accent-2-600)', color: 'var(--color-bg)' }}>
@@ -674,8 +735,8 @@ function CookView({ r, step, setStep, onClose, onDone, T, onOpenTimer }) {
       <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-accent-2-200)' }}>{r.name}</div>
       <TimerPills timers={others.map(t => (t.recipeId === r.id ? t : { ...t, short: t.recipeName }))} T={T} onOpen={onOpenTimer} dark />
       <div key={i} className={dir > 0 ? 'step-next' : dir < 0 ? 'step-prev' : 'screen'} style={{ flex: 1, minHeight: 0, overflowY: 'auto', scrollbarWidth: 'none', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 18 }}>
-        <div className="h" style={{ fontSize: long ? 72 : 96, lineHeight: 0.9, color: 'var(--color-accent-2-400)' }}>{i + 1}</div>
-        <div className="h" aria-live="polite" style={{ fontSize: long ? 26 : 32, lineHeight: 1.15, textWrap: 'pretty' }}>{r.steps[i]}</div>
+        <div className="h" style={{ fontSize: (long ? 72 : 96) * (wide ? 1.4 : 1), lineHeight: 0.9, color: 'var(--color-accent-2-400)' }}>{i + 1}</div>
+        <div className="h" aria-live="polite" style={{ fontSize: wide ? (long ? 36 : 46) : (long ? 26 : 32), lineHeight: 1.15, textWrap: 'pretty', maxWidth: 820 }}>{r.steps[i]}</div>
         {durations.map((d, k) => (
           <StepTimer key={k} T={T} timer={T.timers.find(t => t.key === keyOf(k))}
             d={{ ...d, onStart: () => T.start(keyOf(k), d.sec, r.name + ', étape ' + (i + 1), { recipeId: r.id, recipeName: r.name, step: i, short: 'Étape ' + (i + 1) }) }} />
@@ -690,6 +751,7 @@ function CookView({ r, step, setStep, onClose, onDone, T, onOpenTimer }) {
           style={{ flex: 1.4, height: 58, borderRadius: 999, background: 'var(--color-bg)', color: 'var(--color-accent-2-800)', fontFamily: 'var(--font-heading)', fontSize: 17, textAlign: 'center' }}>
           {last ? "C'est prêt" : 'Suivant'}
         </button>
+      </div>
       </div>
     </div>
   );

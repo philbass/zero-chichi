@@ -285,3 +285,15 @@ input[type="search"]::-webkit-search-decoration { -webkit-appearance: none; appe
   .cascade > *, .heart-beat, .heart-spark, .hero-in, .jiggle, .count-pop, .tab-badge, .step-next, .step-prev, .ring-swing, .flip-in, .dice-btn svg, .sk, .swipe-leave, .toast { animation: none !important; }
   .course-box path, .course-txt::after, .swipe-over { transition: none !important; }
 }
+
+/* ── Tablette : plein écran, sans cadre de téléphone ───── */
+html.tablet body { background: var(--color-bg); }
+html.tablet #root { display: block; padding: 0; height: 100%; min-height: 0; }
+html.tablet .app {
+  width: 100%; height: 100%; max-height: none; border-radius: 0; box-shadow: none;
+  --status-h: env(safe-area-inset-top, 0px); --bottom-safe: env(safe-area-inset-bottom, 0px);
+}
+html.tablet .statusbar-fake { display: none; }
+html.tablet .hscroll { margin: 0 -40px; padding: 0 40px; }
+html.tablet [role="dialog"] { max-width: 560px; margin: 0 auto; }
+.wrap-row { display: flex; flex-wrap: wrap; }
