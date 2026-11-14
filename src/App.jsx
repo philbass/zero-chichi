@@ -155,8 +155,9 @@ export default function App() {
     return a.slice(0, 3);
   }, [recipes, seed]);
   // Les plus récentes d'abord ; à date égale, la dernière ajoutée à la liste passe devant.
-  const latest = useMemo(() => recipes.map((r, i) => [r, addedOf(r) || '', i])
-    .sort((a, b) => (a[1] === b[1] ? b[2] - a[2] : a[1] < b[1] ? 1 : -1)).slice(0, 8).map(x => x[0]), [recipes]);
+  const byNewest = useMemo(() => recipes.map((r, i) => [r, addedOf(r) || '', i])
+    .sort((a, b) => (a[1] === b[1] ? b[2] - a[2] : a[1] < b[1] ? 1 : -1)).map(x => x[0]), [recipes]);
+  const latest = useMemo(() => byNewest.slice(0, 8), [byNewest]);
 
   let rows = [], listTitle = '', listSub = '', emptyTitle = '', emptyText = '', browse = false, searchInfo = '';
   if (s === 'search') {
@@ -169,7 +170,7 @@ export default function App() {
     searchInfo = browse ? 'Ou parcours par catégorie' : plural(res.length, 'résultat');
     emptyTitle = 'Rien trouvé'; emptyText = 'Essaie un autre mot ou retire un filtre.';
   } else if (s === 'list') {
-    rows = recipes.filter(r => r.cats.includes(top.cat));
+    rows = byNewest.filter(r => r.cats.includes(top.cat)); // les plus récentes d'abord
     listTitle = top.cat; listSub = plural(rows.length, 'recette');
     emptyTitle = 'Catégorie vide'; emptyText = 'Ouvre une recette et touche « Catégories » pour la ranger ici.';
   } else if (s === 'favs') {
