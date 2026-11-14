@@ -199,3 +199,89 @@ input[type="search"]::-webkit-search-decoration { -webkit-appearance: none; appe
 
 @keyframes timer-pulse { 50% { filter: brightness(1.12); transform: scale(1.02); } }
 @media (prefers-reduced-motion: reduce) { [role="timer"] { animation: none !important; } }
+
+/* ══ Animations ══════════════════════════════════════════════ */
+
+/* 2. Arrivée en cascade */
+.cascade > * { animation: rise .45s cubic-bezier(.2,.8,.2,1) both; }
+.cascade > *:nth-child(2) { animation-delay: .05s; } .cascade > *:nth-child(3) { animation-delay: .1s; }
+.cascade > *:nth-child(4) { animation-delay: .15s; } .cascade > *:nth-child(5) { animation-delay: .2s; }
+.cascade > *:nth-child(6) { animation-delay: .25s; } .cascade > *:nth-child(7) { animation-delay: .3s; }
+.cascade > *:nth-child(n+8) { animation-delay: .35s; }
+@keyframes rise { from { opacity: 0; transform: translateY(18px); } }
+
+/* 1. Cœur qui bat */
+.heart-btn { position: relative; overflow: visible; }
+.heart-beat { animation: beat .45s cubic-bezier(.3,1.6,.5,1); }
+@keyframes beat { 0% { transform: scale(.6); } 60% { transform: scale(1.3); } 100% { transform: scale(1); } }
+.heart-spark { position: absolute; left: 50%; top: 50%; width: 7px; height: 7px; margin: -3.5px; border-radius: 50%; background: var(--color-accent); pointer-events: none; animation: spark .55s ease-out forwards; }
+@keyframes spark { to { transform: translate(var(--dx), var(--dy)) scale(.2); opacity: 0; } }
+
+/* 3. Vignette → fiche (repli quand le navigateur ne sait pas faire la transition partagée) */
+.hero-in { animation: hero-in .45s cubic-bezier(.2,.8,.2,1) both; transform-origin: 50% 30%; }
+@keyframes hero-in { from { opacity: 0; transform: scale(.88); } }
+::view-transition-group(zc-hero) { animation-duration: .45s; animation-timing-function: cubic-bezier(.2,.8,.2,1); }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .25s; }
+
+/* 4. Pastilles vers les courses */
+.fly-dot { position: absolute; z-index: 60; width: 12px; height: 12px; border-radius: 50%; background: var(--color-accent); pointer-events: none; }
+.jiggle { animation: jiggle .45s; }
+@keyframes jiggle { 25% { transform: rotate(-4deg) scale(1.04); } 55% { transform: rotate(3deg) scale(1.04); } }
+.count-pop { position: absolute; top: -10px; right: 10px; min-width: 26px; height: 22px; padding: 0 7px; border-radius: 999px; background: var(--color-accent); color: var(--color-text); font-family: var(--font-body); font-size: 12px; font-weight: 700; display: grid; place-items: center; animation: count-pop 1.8s ease forwards; }
+@keyframes count-pop { 0% { transform: scale(0); } 15% { transform: scale(1.15); } 25% { transform: scale(1); } 80% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-10px); } }
+.tab-badge { position: absolute; top: -7px; right: -11px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--color-accent); color: var(--color-text); font-size: 10.5px; font-weight: 700; display: grid; place-items: center; animation: badge-pop .35s cubic-bezier(.3,1.6,.5,1); }
+@keyframes badge-pop { from { transform: scale(0); } }
+
+/* 5. Étapes qui glissent */
+.step-next { animation: step-next .4s cubic-bezier(.2,.8,.2,1) both; }
+.step-prev { animation: step-prev .4s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes step-next { from { opacity: 0; transform: translateX(40%); } }
+@keyframes step-prev { from { opacity: 0; transform: translateX(-40%); } }
+
+/* 6. Minuteur en anneau */
+.ring-swing { animation: ring-swing .6s ease-in-out 3; transform-origin: 50% 50%; }
+@keyframes ring-swing { 20% { transform: rotate(-12deg); } 40% { transform: rotate(10deg); } 60% { transform: rotate(-6deg); } 80% { transform: rotate(4deg); } }
+
+/* 7. Coche dessinée + ligne barrée */
+.course-box { width: 26px; height: 26px; flex: none; border-radius: 50%; border: 2px solid var(--color-neutral-500); display: grid; place-items: center; color: var(--color-bg); transition: background-color .2s, border-color .2s; }
+.course-box path { stroke-dasharray: 20; stroke-dashoffset: 20; transition: stroke-dashoffset .3s .08s ease; }
+.course.done .course-box { background: var(--color-accent-2-600); border-color: var(--color-accent-2-600); }
+.course.done .course-box path { stroke-dashoffset: 0; }
+.course-txt { position: relative; transition: opacity .3s .15s; }
+.course-txt::after { content: ""; position: absolute; left: 0; top: 55%; height: 2px; width: 0; background: var(--color-text); border-radius: 2px; transition: width .3s .12s ease; }
+.course.done .course-txt { opacity: .5; } .course.done .course-txt::after { width: 100%; }
+.course-q { transition: opacity .3s .15s; } .course.done .course-q { opacity: .5; }
+
+/* 8. Nouveau tirage */
+.dice-btn { width: 38px; height: 38px; border-radius: 50%; background: var(--color-accent); color: var(--color-text); display: grid; place-items: center; cursor: pointer; }
+.dice-btn:active { transform: scale(.94); }
+.dice-btn.rolling svg { animation: dice-roll .6s ease; }
+@keyframes dice-roll { to { transform: rotate(360deg); } }
+.flip-in { animation: flip-in .55s cubic-bezier(.3,.7,.3,1) both; transform-origin: 50% 50%; }
+.hscroll > .flip-in:nth-child(2) { animation-delay: .08s; } .hscroll > .flip-in:nth-child(3) { animation-delay: .16s; }
+@keyframes flip-in { from { opacity: 0; transform: perspective(600px) rotateY(80deg); } }
+
+/* 9. Confettis */
+.confetti { position: absolute; inset: 0; z-index: 70; pointer-events: none; overflow: hidden; }
+.confetti i { position: absolute; top: -16px; height: 12px; border-radius: 2px; animation: confetti 1.8s cubic-bezier(.3,.6,.5,1) forwards; }
+@keyframes confetti { to { transform: translate(var(--dx), 110vh) rotate(var(--r)); } }
+
+/* 10. Chargement en reflet */
+.sk { height: 14px; border-radius: 10px; background: linear-gradient(90deg, var(--color-neutral-200) 0%, #f6faf3 50%, var(--color-neutral-200) 100%); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* 11. Glisser pour retirer */
+.swipe { position: relative; overflow: hidden; touch-action: pan-y; }
+.swipe-under { position: absolute; inset: 0; background: var(--color-error); color: #fff; display: flex; align-items: center; justify-content: flex-end; padding-right: 18px; font-weight: 700; font-size: 13px; }
+.swipe-over { position: relative; transition: transform .3s cubic-bezier(.2,.8,.2,1); }
+.swipe-leave { animation: swipe-leave .26s ease forwards; }
+@keyframes swipe-leave { to { opacity: 0; } }
+
+/* 12. Message qui rebondit (remplace l'apparition simple) */
+.toast { animation: toast-bounce .45s cubic-bezier(.3,1.5,.5,1); }
+@keyframes toast-bounce { from { opacity: 0; transform: translate(-50%, 40px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .cascade > *, .heart-beat, .heart-spark, .hero-in, .jiggle, .count-pop, .tab-badge, .step-next, .step-prev, .ring-swing, .flip-in, .dice-btn svg, .sk, .swipe-leave, .toast { animation: none !important; }
+  .course-box path, .course-txt::after, .swipe-over { transition: none !important; }
+}

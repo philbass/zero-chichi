@@ -5,6 +5,7 @@ import { useRecipeStore, getCapability } from './store.js';
 import { CATS as CORE_CATS } from './data.js';
 import RecipeEditor, { CatPicker } from './RecipeEditor.jsx';
 import { renderRecipeCard, cardFilename } from './shareCard.js';
+import { HeartButton, Confetti, Swipeable, flyDots, withHeroTransition, supportsHeroTransition } from './anim.jsx';
 
 const TINTS = ['accent', 'accent-2', 'neutral'];
 const HEART = 'M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z';
@@ -54,6 +55,10 @@ export default function App() {
   const [portions, setPortions] = useState(2);
   const [toast, setToast] = useState('');
   const [newItem, setNewItem] = useState('');
+  const [confetti, setConfetti] = useState(false);
+  const [cartBump, setCartBump] = useState(null); // { n, key }
+  const appRef = useRef(null);
+  const cartBtnRef = useRef(null);
 
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
@@ -119,6 +124,8 @@ export default function App() {
       const have = new Set(cs.map(c => c.n));
       return [...cs, ...items.filter(i => !have.has(i.n)).map(i => ({ n: i.n, q: i.q, done: false }))];
     });
+    const ms = flyDots(appRef.current?.querySelectorAll('[data-ing]') || [], cartBtnRef.current, appRef.current);
+    setTimeout(() => setCartBump({ n: items.length, key: Date.now() }), ms);
     flash(items.length + ' ingrédients ajoutés aux courses');
   };
 
@@ -136,7 +143,8 @@ export default function App() {
     return { name: c, n, countLabel: n ? plural(n, 'recette') : 'Vide', bg: `var(--color-${t}-200)`, fg: `var(--color-${t}-800)` };
   }), [recipes, categories]);
   // Tirage fait une fois par lancement de l'app : l'ordre reste stable pendant la visite.
-  const [seed] = useState(() => Math.random());
+  const [seed, setSeed] = useState(() => Math.random());
+  const [rolling, setRolling] = useState(0);
   const random3 = useMemo(() => {
     const pool = recipes.filter(r => imgUrl(r));
     let s = Math.floor(seed * 2147483646) + 1;
@@ -181,11 +189,11 @@ export default function App() {
   const showRows = (s === 'search' && !browse) || s === 'list' || s === 'favs';
   const left = courses.filter(c => !c.done).length;
 
-  const openRecipe = r => go({ s: 'recipe', id: r.id });
+  const openRecipe = (r, e) => withHeroTransition(e?.currentTarget?.querySelector('[data-thumb]'), () => go({ s: 'recipe', id: r.id }));
   const openCat = c => go({ s: 'list', cat: c });
 
   return (
-    <div className="app" style={{ '--frame-radius': IS_ANDROID ? '36px' : '54px' }}>
+    <div className="app" ref={appRef} style={{ '--frame-radius': IS_ANDROID ? '36px' : '54px' }}>
       <div className="statusbar" style={{ color: isCook ? 'var(--color-bg)' : 'var(--color-text)', background: isCook ? 'var(--color-accent-2-700)' : 'transparent' }}>
         <FakeStatus />
       </div>
@@ -217,7 +225,7 @@ export default function App() {
                 <button className="btn btn-ghost" onClick={() => go({ s: 'cats' })}
                   style={{ textDecoration: 'underline', textUnderlineOffset: 3, fontSize: 14, whiteSpace: 'nowrap', flex: 'none' }}>Tout voir</button>
               </div>
-              <div className="hscroll" style={{ gap: 8 }}>
+              <div className="hscroll cascade" style={{ gap: 8 }}>
                 {catTiles.map(c => (
                   <button key={c.name} className="reset press" onClick={() => openCat(c.name)}
                     style={{ flex: 'none', height: 40, padding: '0 16px', borderRadius: 999, background: c.bg, color: c.fg, fontSize: 14, fontWeight: 600 }}>
@@ -229,11 +237,11 @@ export default function App() {
 
             <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <h2 className="h" style={{ fontSize: 20, margin: 0 }}>Dernières recettes</h2>
-              <div className="hscroll" style={{ gap: 12, paddingBottom: 4 }}>
+              <div className="hscroll cascade" style={{ gap: 12, paddingBottom: 4 }}>
                 {latest.map(r => (
-                  <button key={r.id} className="reset press" onClick={() => openRecipe(r)}
+                  <button key={r.id} className="reset press" onClick={e => openRecipe(r, e)}
                     style={{ flex: 'none', width: 180, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div className="illus" style={{ width: '100%', height: 150, borderRadius: 28, background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 16 }} />
+                    <div data-thumb className="illus" style={{ width: '100%', height: 150, borderRadius: 28, background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 16 }} />
                     <div className="h" style={{ fontSize: 16, lineHeight: 1.2 }}>{r.name}</div>
                     <div className="muted" style={{ fontSize: 12, marginTop: -6 }}>{meta(r)}</div>
                   </button>
@@ -242,12 +250,18 @@ export default function App() {
             </section>
 
             <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <h2 className="h" style={{ fontSize: 20, margin: 0 }}>Au hasard</h2>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h2 className="h" style={{ fontSize: 20, margin: 0 }}>Au hasard</h2>
+                <button key={'d' + rolling} className={'reset dice-btn' + (rolling ? ' rolling' : '')} aria-label="Tirer trois autres recettes"
+                  onClick={() => { setSeed(Math.random()); setRolling(n => n + 1); }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4" /><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" /><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" /><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor" /><circle cx="8.5" cy="15.5" r="1.3" fill="currentColor" /></svg>
+                </button>
+              </div>
               <div className="hscroll" style={{ gap: 12, paddingBottom: 4 }}>
                 {random3.map(r => (
-                  <button key={r.id} className="reset press" onClick={() => openRecipe(r)}
+                  <button key={rolling + '-' + r.id} className="reset press flip-in" onClick={e => openRecipe(r, e)}
                     style={{ flex: 'none', width: 180, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div className="illus" style={{ width: '100%', height: 150, borderRadius: 28, background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 16 }} />
+                    <div data-thumb className="illus" style={{ width: '100%', height: 150, borderRadius: 28, background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 16 }} />
                     <div className="h" style={{ fontSize: 16, lineHeight: 1.2 }}>{r.name}</div>
                     <div className="muted" style={{ fontSize: 12, marginTop: -6 }}>{meta(r)}</div>
                   </button>
@@ -298,7 +312,7 @@ export default function App() {
 
         {/* ── Grille des catégories ── */}
         {showCatsGrid && (
-          <div style={{ padding: '16px 22px 28px', display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 10 }}>
+          <div className="cascade" style={{ padding: '16px 22px 28px', display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 10 }}>
             {catTiles.map(c => (
               <button key={c.name} className="reset press" onClick={() => openCat(c.name)}
                 style={{ height: 96, padding: '14px 16px', borderRadius: 28, background: c.bg, color: c.fg, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -318,24 +332,24 @@ export default function App() {
 
         {/* ── Lignes de recettes ── */}
         {showRows && (
-          <div style={{ padding: '16px 22px 28px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="cascade" style={{ padding: '16px 22px 28px', display: 'flex', flexDirection: 'column', gap: 10 }}>
             {rows.map(r => {
               const fav = favs.includes(r.id);
-              return (
-                <div key={r.id} role="button" tabIndex={0} className="press" onClick={() => openRecipe(r)}
-                  onKeyDown={e => { if (e.key === 'Enter') openRecipe(r); }}
+              const row = (
+                <div role="button" tabIndex={0} className="press" onClick={e => openRecipe(r, e)}
+                  onKeyDown={e => { if (e.key === 'Enter') openRecipe(r, e); }}
                   style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8, borderRadius: 26, background: 'var(--color-surface)', cursor: 'pointer' }}>
-                  <div style={{ width: 64, height: 64, flex: 'none', borderRadius: 20, background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 6 }} />
+                  <div data-thumb style={{ width: 64, height: 64, flex: 'none', borderRadius: 20, background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 6 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="h" style={{ fontSize: 17, lineHeight: 1.2 }}>{r.name}</div>
                     <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>{meta(r)}</div>
                   </div>
-                  <button className="icon-btn" aria-label={fav ? 'Retirer des favoris' : 'Ajouter aux favoris'} aria-pressed={fav}
-                    onClick={e => { e.stopPropagation(); toggleFav(r.id); }}>
-                    <Icon d={HEART} fill={fav ? 'var(--color-accent)' : 'none'} />
-                  </button>
+                  <HeartButton fav={fav} onToggle={() => toggleFav(r.id)} />
                 </div>
               );
+              return s === 'favs'
+                ? <Swipeable key={r.id} radius={26} label="Retirer des favoris" onRemove={() => toggleFav(r.id)}>{row}</Swipeable>
+                : <div key={r.id}>{row}</div>;
             })}
             {!rows.length && (
               <div style={{ padding: '40px 12px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>
@@ -400,18 +414,21 @@ export default function App() {
             </form>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {courses.map((c, i) => (
-                <div key={c.n + i} role="checkbox" aria-checked={c.done} tabIndex={0}
-                  onClick={() => setCourses(cs => cs.map((cc, j) => (j === i ? { ...cc, done: !cc.done } : cc)))}
-                  onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); e.currentTarget.click(); } }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 4px', cursor: 'pointer', borderBottom: '1px solid var(--color-divider)' }}>
-                  <div style={{ width: 26, height: 26, flex: 'none', borderRadius: '50%', border: `2px solid ${c.done ? 'var(--color-accent-2-600)' : 'var(--color-neutral-500)'}`, background: c.done ? 'var(--color-accent-2-600)' : 'transparent', display: 'grid', placeItems: 'center', color: 'var(--color-bg)', transition: 'background-color .15s' }}>
-                    <Icon d="M20 6 9 17l-5-5" size={14} sw={3.5} />
+                <Swipeable key={c.n + i} onRemove={() => setCourses(cs => cs.filter((_, j) => j !== i))}>
+                  <div role="checkbox" aria-checked={c.done} tabIndex={0} className={'course' + (c.done ? ' done' : '')}
+                    onClick={() => setCourses(cs => cs.map((cc, j) => (j === i ? { ...cc, done: !cc.done } : cc)))}
+                    onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); e.currentTarget.click(); } }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 4px', cursor: 'pointer', borderBottom: '1px solid var(--color-divider)', background: 'var(--color-bg)' }}>
+                    <div className="course-box">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+                    </div>
+                    <div style={{ flex: 1, fontSize: 16 }}><span className="course-txt">{c.n}</span></div>
+                    <span className="muted course-q" style={{ fontSize: 13, fontWeight: 700 }}>{c.q}</span>
                   </div>
-                  <div style={{ flex: 1, fontSize: 16, textDecoration: c.done ? 'line-through' : 'none', opacity: c.done ? 0.5 : 1 }}>{c.n}</div>
-                  <span className="muted" style={{ fontSize: 13, fontWeight: 700, opacity: c.done ? 0.5 : 1 }}>{c.q}</span>
-                </div>
+                </Swipeable>
               ))}
             </div>
+            {courses.length > 0 && <div className="muted" style={{ fontSize: 12, marginTop: -6 }}>Astuce : fais glisser un article vers la gauche pour le retirer.</div>}
             {!courses.length && (
               <div style={{ padding: '36px 12px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>
                 <div className="h" style={{ fontSize: 20 }}>Liste vide</div>
@@ -429,7 +446,10 @@ export default function App() {
       {/* ── Barre d'actions de la fiche ── */}
       {isRecipe && (
         <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '14px 18px', paddingBottom: 'max(28px, calc(14px + var(--bottom-safe)))', display: 'flex', gap: 10, background: 'var(--color-bg)', boxShadow: '0 -8px 24px color-mix(in srgb, var(--color-neutral-900) 8%, transparent)', zIndex: 10 }}>
-          <button className="btn btn-secondary" onClick={() => addCourses(recipe)} style={{ flex: 1, height: 52, fontSize: 15 }}>+ Aux courses</button>
+          <button ref={cartBtnRef} key={cartBump?.key || 0} className={'btn btn-secondary' + (cartBump ? ' jiggle' : '')} onClick={() => addCourses(recipe)} style={{ flex: 1, height: 52, fontSize: 15, position: 'relative' }}>
+            + Aux courses
+            {cartBump && <span className="count-pop" aria-hidden="true">+{cartBump.n}</span>}
+          </button>
           <button className="btn btn-primary" onClick={() => go({ s: 'cook', id: recipe.id })} style={{ flex: 1.2, height: 52, fontSize: 16 }}>Cuisiner</button>
         </div>
       )}
@@ -437,7 +457,7 @@ export default function App() {
       {/* ── Mode cuisine ── */}
       {isCook && (
         <CookView r={recipe} step={step} setStep={setStep} onClose={back} T={T} onOpenTimer={openTimer}
-          onDone={() => { back(); flash('Bon appétit'); }} />
+          onDone={() => { back(); flash('Bon appétit'); setConfetti(true); }} />
       )}
 
       {sheet?.type === 'cats' && byId(sheet.id) && (
@@ -457,7 +477,9 @@ export default function App() {
         </div>
       )}
 
-      {toast && <div className="toast" role="status">{toast}</div>}
+      {confetti && <Confetti onEnd={() => setConfetti(false)} />}
+
+      {toast && <div key={toast} className="toast" role="status">{toast}</div>}
 
       {/* ── Onglets ── */}
       {!isRecipe && !isEditor && (
@@ -468,7 +490,10 @@ export default function App() {
               <button key={k} className="reset" onClick={() => tab(k)} aria-current={on ? 'page' : undefined}
                 style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, color: on ? 'var(--color-accent-700)' : 'var(--color-neutral-600)', fontSize: 11, fontWeight: 700, height: 54, justifyContent: 'center' }}>
                 <div style={{ width: 58, height: 30, borderRadius: 999, background: on && IS_ANDROID ? 'var(--color-accent-200)' : 'transparent', display: 'grid', placeItems: 'center', transition: 'background-color .15s' }}>
-                  <Icon d={ICONS[k]} size={22} />
+                  <span style={{ position: 'relative', display: 'grid' }}>
+                    <Icon d={ICONS[k]} size={22} />
+                    {k === 'courses' && left > 0 && <span key={left} className="tab-badge">{left}</span>}
+                  </span>
                 </div>
                 {label}
               </button>
@@ -517,15 +542,13 @@ function RecipeView({ r, fav, portions, setPortions, onBack, onFav, onShare, onC
   const ing = ingList(r, portions);
   return (
     <div className="screen" style={{ display: 'flex', flexDirection: 'column', paddingBottom: 'calc(110px + var(--bottom-safe))' }}>
-      <div style={{ position: 'relative', height: 'calc(min(96vw, 380px) + var(--status-h))', marginTop: 'calc(-1 * var(--status-h))', borderRadius: '0 0 40px 40px', background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 'calc(58px + var(--status-h)) 10px 14px' }}>
+      <div className={supportsHeroTransition() ? '' : 'hero-in'} style={{ viewTransitionName: 'zc-hero', position: 'relative', height: 'calc(min(96vw, 380px) + var(--status-h))', marginTop: 'calc(-1 * var(--status-h))', borderRadius: '0 0 40px 40px', background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 'calc(58px + var(--status-h)) 10px 14px' }}>
         {!imgUrl(r) && <div style={{ position: 'absolute', bottom: 16, left: 22, font: '500 10px ui-monospace,Menlo,monospace', color: 'var(--color-neutral-700)' }}>illustration du plat</div>}
         <div style={{ position: 'absolute', top: 'calc(10px + var(--status-h))', left: 16, right: 16, display: 'flex', justifyContent: 'space-between' }}>
           <button className="icon-btn raised" onClick={onBack} aria-label="Retour"><BackIcon size={22} /></button>
           <div style={{ display: 'flex', gap: 10 }}>
             <button className="icon-btn raised" onClick={onShare} aria-label="Partager en image"><Icon d={SHARE} /></button>
-            <button className="icon-btn raised" onClick={onFav} aria-label={fav ? 'Retirer des favoris' : 'Ajouter aux favoris'} aria-pressed={fav}>
-              <Icon d={HEART} fill={fav ? 'var(--color-accent)' : 'none'} />
-            </button>
+            <HeartButton className="icon-btn raised" fav={fav} onToggle={onFav} />
           </div>
         </div>
       </div>
@@ -559,7 +582,7 @@ function RecipeView({ r, fav, portions, setPortions, onBack, onFav, onShare, onC
       </div>
       <div style={{ padding: '12px 22px 0', display: 'flex', flexDirection: 'column', gap: 2 }}>
         {ing.map((i, k) => (
-          <div key={k} style={{ display: 'flex', gap: 12, padding: '9px 0', fontSize: 16, borderBottom: '1px solid var(--color-divider)' }}>
+          <div key={k} data-ing style={{ display: 'flex', gap: 12, padding: '9px 0', fontSize: 16, borderBottom: '1px solid var(--color-divider)' }}>
             <span style={{ width: 84, flex: 'none', fontWeight: 700, color: 'var(--color-accent-700)' }}>{i.q}</span>
             <span>{i.n}</span>
           </div>
@@ -596,6 +619,10 @@ function CookView({ r, step, setStep, onClose, onDone, T, onOpenTimer }) {
   const keyOf = k => `${r.id}:${i}:${k}`;
   const others = T.timers.filter(t => !(t.recipeId === r.id && t.step === i));
   const long = r.steps[i].length > 80 || durations.length > 1;
+  // Sens du glissement, figé pour chaque étape (le minuteur rafraîchit l'écran sans changer d'étape).
+  const [slide, setSlide] = useState({ i, dir: 0 });
+  if (slide.i !== i) setSlide({ i, dir: i > slide.i ? 1 : -1 });
+  const dir = slide.i === i ? slide.dir : 0;
 
   /* Garde l'écran allumé pendant qu'on cuisine, quand le navigateur le permet. */
   useEffect(() => {
@@ -614,12 +641,14 @@ function CookView({ r, step, setStep, onClose, onDone, T, onOpenTimer }) {
       </div>
       <div style={{ display: 'flex', gap: 6 }}>
         {r.steps.map((_, k) => (
-          <div key={k} style={{ flex: 1, height: 6, borderRadius: 999, background: k <= i ? 'var(--color-bg)' : 'var(--color-accent-2-500)', transition: 'background-color .2s' }} />
+          <div key={k} style={{ flex: 1, height: 6, borderRadius: 999, background: 'var(--color-accent-2-500)', overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: k <= i ? '100%' : '0%', background: 'var(--color-bg)', transition: 'width .45s ease' }} />
+          </div>
         ))}
       </div>
       <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-accent-2-200)' }}>{r.name}</div>
       <TimerPills timers={others.map(t => (t.recipeId === r.id ? t : { ...t, short: t.recipeName }))} T={T} onOpen={onOpenTimer} dark />
-      <div key={i} className="screen" style={{ flex: 1, minHeight: 0, overflowY: 'auto', scrollbarWidth: 'none', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 18 }}>
+      <div key={i} className={dir > 0 ? 'step-next' : dir < 0 ? 'step-prev' : 'screen'} style={{ flex: 1, minHeight: 0, overflowY: 'auto', scrollbarWidth: 'none', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 18 }}>
         <div className="h" style={{ fontSize: long ? 72 : 96, lineHeight: 0.9, color: 'var(--color-accent-2-400)' }}>{i + 1}</div>
         <div className="h" aria-live="polite" style={{ fontSize: long ? 26 : 32, lineHeight: 1.15, textWrap: 'pretty' }}>{r.steps[i]}</div>
         {durations.map((d, k) => (

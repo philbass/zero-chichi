@@ -148,6 +148,13 @@ export default function RecipeEditor({ initial, cats, onAddCat, onSave, onDelete
           <button className="btn btn-primary" onClick={format} disabled={busy} style={{ height: 52, fontSize: 16 }}>
             {busy ? 'Mise en forme…' : 'Mettre en forme'}
           </button>
+          {busy && (
+            <div aria-hidden="true" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div className="sk" style={{ height: 26, width: '70%', borderRadius: 12 }} />
+              <div style={{ display: 'flex', gap: 8 }}>{[64, 90, 56].map(w => <div key={w} className="sk" style={{ height: 24, width: w, borderRadius: 999 }} />)}</div>
+              {[88, 72, 80, 60].map((w, k) => <div key={k} className="sk" style={{ height: 14, width: w + '%' }} />)}
+            </div>
+          )}
           <button className="btn btn-ghost" onClick={() => { setForm(toForm({})); setPhase('review'); }} style={{ alignSelf: 'center', textDecoration: 'underline', textUnderlineOffset: 3 }}>
             Saisir à la main
           </button>

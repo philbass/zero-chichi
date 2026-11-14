@@ -101,14 +101,17 @@ export function StepTimer({ d, timer, T }) {
   const pct = timer.total ? 1 - left / timer.total : 1;
   return (
     <div role="timer" aria-live="off" aria-label={'Minuteur ' + d.label}
-      style={{ alignSelf: 'stretch', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 10px 10px 18px', borderRadius: 28, background: timer.done ? 'var(--color-accent)' : 'var(--color-bg)', color: 'var(--color-text)', animation: timer.done ? 'timer-pulse 1s ease-in-out infinite' : 'none' }}>
+      style={{ alignSelf: 'stretch', display: 'flex', alignItems: 'center', gap: 12, padding: '10px 10px 10px 12px', borderRadius: 28, background: timer.done ? 'var(--color-accent)' : 'var(--color-bg)', color: 'var(--color-text)', animation: timer.done ? 'timer-pulse 1s ease-in-out infinite' : 'none' }}>
+      {/* Anneau qui se vide pendant le décompte, puis se balance quand c'est fini. */}
+      <svg className={timer.done ? 'ring-swing' : ''} width="52" height="52" viewBox="0 0 52 52" aria-hidden="true" style={{ flex: 'none' }}>
+        <circle cx="26" cy="26" r="22" fill="none" stroke={timer.done ? 'var(--color-text)' : 'var(--color-accent-2-200)'} strokeWidth="6" />
+        <circle cx="26" cy="26" r="22" fill="none" stroke="var(--color-accent-2-600)" strokeWidth="6" strokeLinecap="round"
+          strokeDasharray="138.23" strokeDashoffset={(138.23 * pct).toFixed(2)} transform="rotate(-90 26 26)"
+          style={{ transition: 'stroke-dashoffset .25s linear', opacity: timer.done ? 0 : 1 }} />
+        {timer.done && <path d="M20 26l4 4 8-9" fill="none" stroke="var(--color-text)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />}
+      </svg>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="h" style={{ fontSize: 34, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{timer.done ? 'Terminé !' : fmtClock(left)}</div>
-        {!timer.done && (
-          <div style={{ marginTop: 8, height: 5, borderRadius: 999, background: 'var(--color-accent-2-200)', overflow: 'hidden' }}>
-            <div style={{ width: (pct * 100).toFixed(1) + '%', height: '100%', background: 'var(--color-accent-2-600)', transition: 'width .25s linear' }} />
-          </div>
-        )}
       </div>
       {timer.done ? (
         <button className="reset press" onClick={() => T.stop(timer.id)} style={{ height: 44, padding: '0 20px', borderRadius: 999, background: 'var(--color-text)', color: 'var(--color-bg)', fontWeight: 700 }}>OK</button>
