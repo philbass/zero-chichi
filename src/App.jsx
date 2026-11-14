@@ -5,6 +5,7 @@ import { useRecipeStore, getCapability } from './store.js';
 import { CATS as CORE_CATS } from './data.js';
 import RecipeEditor, { CatPicker } from './RecipeEditor.jsx';
 import { renderRecipeCard, cardFilename } from './shareCard.js';
+import { macros } from './nutrition.js';
 import { HeartButton, Confetti, Swipeable, flyDots, withHeroTransition, supportsHeroTransition } from './anim.jsx';
 
 const TINTS = ['accent', 'accent-2', 'neutral'];
@@ -565,6 +566,7 @@ function RecipeView({ r, fav, portions, setPortions, onBack, onFav, onShare, onC
           </button>
         </div>
         {addedOf(r) && <div className="muted" style={{ fontSize: 13 }}>Ajoutée le {fmtDate(addedOf(r))}</div>}
+        <MacrosCard r={r} />
         {onEdit && (
           <button className="btn btn-ghost" onClick={onEdit} style={{ alignSelf: 'flex-start', textDecoration: 'underline', textUnderlineOffset: 3, fontSize: 14, marginTop: -2 }}>
             Modifier la recette
@@ -598,6 +600,27 @@ function RecipeView({ r, fav, portions, setPortions, onBack, onFav, onShare, onC
           </li>
         ))}
       </ol>
+    </div>
+  );
+}
+
+function MacrosCard({ r }) {
+  const m = macros(r);
+  if (!m.counted) return null;
+  const items = [['Énergie', m.kcal, 'kcal'], ['Protéines', m.p, 'g'], ['Glucides', m.g, 'g'], ['Lipides', m.l, 'g']];
+  return (
+    <div style={{ marginTop: 4, padding: '12px 14px 10px', borderRadius: 22, background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 6 }}>
+        {items.map(([label, v, unit], k) => (
+          <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, padding: '6px 2px', borderRadius: 14, background: k === 0 ? 'var(--color-accent-100)' : 'var(--color-neutral-100)' }}>
+            <span className="h" style={{ fontSize: 18, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>{v}<span style={{ fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 700, marginLeft: 2 }}>{unit}</span></span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-neutral-700)' }}>{label}</span>
+          </div>
+        ))}
+      </div>
+      <div className="muted" style={{ fontSize: 11.5, lineHeight: 1.35 }}>
+        Par {m.per}{m.unknown.length ? ' · sans ' + m.unknown.join(', ') : ''}. Estimation calculée à partir des ingrédients (valeurs moyennes Ciqual).
+      </div>
     </div>
   );
 }
