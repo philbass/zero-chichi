@@ -155,11 +155,12 @@ export function macros(r) {
     if (w > 0 || m.food[1] === 0) counted++;
     tot.kcal += (m.food[1] * w) / 100; tot.p += (m.food[2] * w) / 100; tot.g += (m.food[3] * w) / 100; tot.l += (m.food[4] * w) / 100;
   }
-  const per = r.yield ? 1 : r.p; // par personne, ou par pièce pour les recettes en pièces
-  const k = 1 / Math.max(1, r.p);
+  // Par personne, par pièce (financier, bouchon…), ou par part quand la recette donne un plat entier découpé (r.parts).
+  const per = r.yield ? 1 : r.p;
+  const k = 1 / Math.max(1, r.p * (r.parts || 1));
   return {
     kcal: Math.round(tot.kcal * k / 5) * 5, p: Math.round(tot.p * k), g: Math.round(tot.g * k), l: Math.round(tot.l * k),
-    per: r.yield ? r.yield[0] : 'personne', perCount: per, unknown,
+    per: r.parts ? `part (1/${r.parts} de la recette)` : r.yield ? r.yield[0] : 'personne', perCount: per, unknown,
     complete: unknown.length === 0, counted, quantified,
   };
 }
