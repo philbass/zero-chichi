@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BASE, norm, fmtT, meta, plural, ingList, illus, imgUrl, portionLabel, parseDurations, addedOf, fmtDate, difficulty, totalT, waitLabel } from './lib.js';
 import { useTimers, StepTimer, TimerPills } from './timers.jsx';
 import { useRecipeStore, getCapability } from './store.js';
-import { CATS as CORE_CATS } from './data.js';
+import { CATS as CORE_CATS, RECIPES } from './data.js';
+import { APP_URL, APP_URL_SHORT, recipeUrl, takeDeepLink, QRCode, shareLink, useInstall } from './share.jsx';
 import RecipeEditor, { CatPicker } from './RecipeEditor.jsx';
 import { renderRecipeCard, cardFilename } from './shareCard.js';
 import { macros } from './nutrition.js';
@@ -60,6 +61,9 @@ function useTablet() {
   return mode;
 }
 
+// Ouverture par un lien de recette partagé (#recette=…).
+const DEEP = (() => { const id = takeDeepLink(); return RECIPES.find(r => r.id === id) || null; })();
+
 /* ── application ─────────────────────────────────────────── */
 export default function App() {
   const tablet = useTablet();
@@ -69,14 +73,14 @@ export default function App() {
   const addCat = async name => { const n = await addCategory(name).catch(() => null); if (n) flash('Catégorie « ' + n + ' » prête'); return n; };
   const byId = id => recipes.find(r => r.id === id);
   const [sheet, setSheet] = useState(null); // { type: 'cats' | 'share', id }
-  const [stack, setStack] = useState([{ s: 'home' }]);
+  const [stack, setStack] = useState(() => (DEEP ? [{ s: 'home' }, { s: 'recipe', id: DEEP.id }] : [{ s: 'home' }]));
   const [favs, setFavs] = useState(() => load('favs', []));
   const [courses, setCourses] = useState(() => load('courses', []));
   const [q, setQ] = useState('');
   const [fTime, setFTime] = useState(0);
   const [fIng, setFIng] = useState(0);
   const [step, setStep] = useState(0);
-  const [portions, setPortions] = useState(2);
+  const [portions, setPortions] = useState(DEEP ? DEEP.p : 2);
   const [toast, setToast] = useState('');
   const [newItem, setNewItem] = useState('');
   const [confetti, setConfetti] = useState(false);
@@ -90,6 +94,14 @@ export default function App() {
   const skipPop = useRef(0);
   const depth = useRef(1);
 
+  useEffect(() => { if (DEEP) history.pushState({ zc: true }, ''); }, []);
+  /* Lien de recette ouvert alors que l'app est déjà affichée. */
+  useEffect(() => {
+    const onHash = () => { const id = takeDeepLink(); if (RECIPES.some(r => r.id === id)) goRef.current({ s: 'recipe', id }); };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+  const install = useInstall();
   useEffect(() => save('favs', favs), [favs]);
   useEffect(() => save('courses', courses), [courses]);
   useEffect(() => { depth.current = stack.length; }, [stack]);
@@ -129,6 +141,8 @@ export default function App() {
     history.pushState({ zc: true }, '');
     setStack(st => [...st, e]);
   };
+  const goRef = useRef(go);
+  goRef.current = go;
   const back = () => { if (depth.current > 1) history.back(); };
   const tab = t => {
     const extra = depth.current - 1;
@@ -227,10 +241,27 @@ export default function App() {
         {/* ── Accueil ── */}
         {s === 'home' && (
           <div className="screen" style={{ padding: wide ? '28px 40px 40px' : '12px 22px 28px', display: 'flex', flexDirection: 'column', gap: wide ? 28 : 22 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <img src={`${BASE}assets/logo-zero-chichi.png`} alt="Zéro Chichi" style={{ height: 64, width: 'auto', alignSelf: 'flex-start' }} />
-              <div className="muted" style={{ fontSize: 14 }}>Des recettes courtes. Rien de plus.</div>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+              <img src={`${BASE}assets/logo-zero-chichi.png`} alt="Zéro Chichi" style={{ height: 64, width: 'auto' }} />
+              <button className="reset press" onClick={() => setSheet({ type: 'app' })}
+                style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 6, height: 40, padding: '0 14px 0 12px', marginTop: 12, borderRadius: 999, background: 'var(--color-accent-2-100)', color: 'var(--color-accent-2-800)', fontSize: 13, fontWeight: 700 }}>
+                <Icon d={SHARE} size={16} sw={2.5} />Partager l'app
+              </button>
             </div>
+            <div className="muted" style={{ fontSize: 14, marginTop: wide ? -20 : -14 }}>Des recettes courtes. Rien de plus.</div>
+            {install && (
+              <div className="screen" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 6px 12px 18px', borderRadius: 24, background: 'var(--color-accent-2-700)', color: 'var(--color-bg)' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="h" style={{ fontSize: 16 }}>Installe l'app</div>
+                  <div style={{ fontSize: 12, color: 'var(--color-accent-2-200)' }}>Sur ton écran d'accueil</div>
+                </div>
+                <button className="reset press" onClick={async () => { if (!(await install.install())) setSheet({ type: 'install' }); }}
+                  style={{ flex: 'none', height: 38, padding: '0 14px', borderRadius: 999, background: 'var(--color-bg)', color: 'var(--color-accent-2-800)', fontFamily: 'var(--font-heading)', fontSize: 14 }}>
+                  {install.native ? 'Installer' : 'Comment ?'}
+                </button>
+                <button className="icon-btn" onClick={install.dismiss} aria-label="Masquer" style={{ width: 36, height: 36, color: 'var(--color-bg)' }}><CloseIcon size={16} /></button>
+              </div>
+            )}
             <div style={wide ? { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 14, alignItems: 'center' } : { display: 'contents' }}>
             <button className="reset press" onClick={() => tab('search')}
               style={{ display: 'flex', alignItems: 'center', gap: 10, height: 50, padding: '0 18px', borderRadius: 999, border: '1px solid var(--color-divider)', background: 'var(--color-surface)', fontSize: 15, color: 'var(--color-neutral-700)' }}>
@@ -496,6 +527,8 @@ export default function App() {
       {sheet?.type === 'newcat' && (
         <NewCatSheet onClose={() => setSheet(null)} onAdd={async n => { const name = await addCat(n); if (name) setSheet(null); }} />
       )}
+      {sheet?.type === 'app' && <AppShareSheet onClose={() => setSheet(null)} flash={flash} />}
+      {sheet?.type === 'install' && <InstallSheet onClose={() => setSheet(null)} />}
       {sheet?.type === 'share' && byId(sheet.id) && (
         <ShareSheet r={byId(sheet.id)} portions={portions} onClose={() => setSheet(null)} flash={flash} />
       )}
@@ -836,7 +869,7 @@ function ShareSheet({ r, portions, onClose, flash }) {
   };
 
   return (
-    <Sheet title="Partager la fiche" onClose={onClose}>
+    <Sheet title="Partager la recette" onClose={onClose}>
       <div className="muted" style={{ fontSize: 14, marginTop: -8 }}>
         Une image de la recette ({portionLabel(r, portions)}) à envoyer par WhatsApp, SMS ou mail.
       </div>
@@ -848,6 +881,67 @@ function ShareSheet({ r, portions, onClose, flash }) {
       <button className="btn btn-primary" disabled={!img || busy} onClick={send} style={{ height: 52, fontSize: 16 }}>
         {busy ? 'Un instant…' : "Envoyer l'image"}
       </button>
+      {!r.custom && (
+        <button className="btn btn-secondary" onClick={async () => {
+          const res = await shareLink({ title: r.name, text: r.name + ', une recette Zéro Chichi', url: recipeUrl(r) });
+          if (res === 'shared') onClose();
+          else if (res === 'copied') { flash('Lien copié'); onClose(); }
+          else if (res === 'failed') setHint('Lien de la recette : ' + recipeUrl(r));
+        }} style={{ height: 50, fontSize: 15, marginTop: -6 }}>
+          Envoyer le lien de la recette
+        </button>
+      )}
+      <div className="muted" style={{ fontSize: 12.5, marginTop: -4, textAlign: 'center' }}>
+        {r.custom ? "Recette perso : seule l'image peut être envoyée." : "Le lien ouvre la recette dans l'app, avec les minuteurs et la liste de courses."}
+      </div>
+    </Sheet>
+  );
+}
+
+function AppShareSheet({ onClose, flash }) {
+  const [hint, setHint] = useState('');
+  const send = async () => {
+    const res = await shareLink({ title: 'Zéro Chichi', text: 'Zéro Chichi, des recettes courtes. Rien de plus. Installe l\'app sur ton téléphone :', url: APP_URL });
+    if (res === 'shared') onClose();
+    else if (res === 'copied') { flash('Lien copié'); onClose(); }
+    else if (res === 'failed') setHint('Copie ce lien : ' + APP_URL);
+  };
+  return (
+    <Sheet title="Partager l'app" onClose={onClose}>
+      <div className="muted" style={{ fontSize: 14, marginTop: -8 }}>
+        Envoie le lien à tes proches : ils pourront installer Zéro Chichi sur leur téléphone. Ou fais-leur scanner ce code.
+      </div>
+      <div style={{ alignSelf: 'center', padding: 14, borderRadius: 28, background: '#fff', boxShadow: 'var(--shadow-md)' }}>
+        <QRCode text={APP_URL} size={176} label="QR code du lien de l'app" />
+      </div>
+      <div style={{ textAlign: 'center', fontWeight: 700, fontSize: 14, userSelect: 'all' }}>{APP_URL_SHORT}</div>
+      {hint && <div role="status" style={{ fontSize: 14, fontWeight: 600, overflowWrap: 'anywhere' }}>{hint}</div>}
+      <button className="btn btn-primary" onClick={send} style={{ height: 52, fontSize: 16 }}>Envoyer le lien</button>
+    </Sheet>
+  );
+}
+
+function InstallSheet({ onClose }) {
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+  const steps = ios
+    ? [[<>Touche le bouton <b>Partager</b> <span style={{ display: 'inline-grid', verticalAlign: '-3px' }}><Icon d={SHARE} size={18} sw={2.5} /></span> de Safari, en bas de l'écran.</>],
+      [<>Fais défiler et choisis <b>Sur l'écran d'accueil</b>.</>],
+      [<>Touche <b>Ajouter</b> en haut à droite.</>]]
+    : [[<>Ouvre le menu du navigateur <b>⋮</b>, en haut à droite.</>],
+      [<>Choisis <b>Installer l'application</b> ou <b>Ajouter à l'écran d'accueil</b>.</>],
+      [<>Confirme avec <b>Installer</b>.</>]];
+  return (
+    <Sheet title="Installer Zéro Chichi" onClose={onClose}>
+      <div className="muted" style={{ fontSize: 14, marginTop: -8 }}>L'icône apparaîtra sur ton écran d'accueil, et l'app marchera même sans connexion.</div>
+      <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {steps.map(([t], k) => (
+          <li key={k} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+            <div className="h" style={{ width: 32, height: 32, flex: 'none', borderRadius: '50%', background: 'var(--color-accent-2-200)', color: 'var(--color-accent-2-800)', display: 'grid', placeItems: 'center', fontSize: 15 }}>{k + 1}</div>
+            <div style={{ fontSize: 16, lineHeight: 1.45, paddingTop: 4 }}>{t}</div>
+          </li>
+        ))}
+      </ol>
+      <button className="btn btn-primary" onClick={onClose} style={{ height: 50, fontSize: 15 }}>C'est noté</button>
     </Sheet>
   );
 }

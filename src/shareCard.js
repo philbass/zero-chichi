@@ -1,5 +1,6 @@
 // Dessine la fiche recette en image PNG (pour WhatsApp, SMS, mail…).
 import { BASE, waitLabel, fmtT, imgUrl, ingList, portionLabel } from './lib.js';
+import { recipeUrl, drawQR, APP_URL_SHORT } from './share.jsx';
 
 const C = {
   bg: '#FBF6EA', text: '#1F3A2E', muted: '#587062', sage: '#CFE3C4', peach: '#F8DDB4',
@@ -57,7 +58,7 @@ export async function renderRecipeCard(r, portions) {
   let h = PAD + heroH + (illu ? 56 : 0) + titleLines.length * 84 + 24 + 64 + 70 // titre + pastilles
     + 70 + ingRows.reduce((a, l) => a + l.length * 44 + 26, 0)
     + 80 + stepRows.reduce((a, l) => a + Math.max(64, l.length * 46) + 22, 0)
-    + 150;
+    + 330; // pied de page avec QR code
 
   const cv = document.createElement('canvas');
   cv.width = W; cv.height = Math.ceil(h);
@@ -111,13 +112,21 @@ export async function renderRecipeCard(r, portions) {
     y += Math.max(64, stepRows[k].length * 46) + 22;
   });
 
-  // Pied de page.
-  y = cv.height - 70;
-  if (logo) ctx.drawImage(logo, PAD, y - 40, 56, 56);
-  ctx.fillStyle = C.muted; ctx.font = `400 30px ${H_FONT}`;
-  ctx.fillText('Zéro Chichi', PAD + (logo ? 72 : 0), y);
-  ctx.font = `400 26px ${B_FONT}`; ctx.textAlign = 'right';
-  ctx.fillText('Des recettes courtes. Rien de plus.', W - PAD, y); ctx.textAlign = 'left';
+  // Pied de page : signature et QR code (lien direct vers la recette, ou vers l'app pour une recette perso).
+  const QR = 210, top = cv.height - PAD - QR;
+  ctx.fillStyle = C.divider; ctx.fillRect(PAD, top - 40, inner, 2);
+  ctx.fillStyle = '#FFFFFF'; roundRect(ctx, W - PAD - QR, top, QR, QR, 28); ctx.fill();
+  drawQR(ctx, recipeUrl(r), W - PAD - QR + 14, top + 14, QR - 28, C.text);
+  let fy = top + 4;
+  if (logo) ctx.drawImage(logo, PAD, fy, 64, 64);
+  ctx.fillStyle = C.text; ctx.font = `400 38px ${H_FONT}`;
+  ctx.fillText('Zéro Chichi', PAD + (logo ? 82 : 0), fy + 46);
+  ctx.fillStyle = C.muted; ctx.font = `400 26px ${B_FONT}`;
+  ctx.fillText('Des recettes courtes. Rien de plus.', PAD, fy + 112);
+  ctx.fillStyle = C.text; ctx.font = `400 26px ${B_FONT}`;
+  ctx.fillText(r.custom ? "Scanne le code pour découvrir l'app" : "Scanne le code pour l'ouvrir dans l'app", PAD, fy + 166);
+  ctx.font = `700 28px ${B_FONT}`;
+  ctx.fillText(APP_URL_SHORT, PAD, fy + 204);
 
   return new Promise(res => cv.toBlob(b => res(b), 'image/png'));
 }
