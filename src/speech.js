@@ -24,6 +24,11 @@ export function useVoiceSettings() {
 /* ── Voix disponibles ── */
 const isFr = v => /^fr/i.test(v.lang);
 const nice = v => /premium|enhanced|améliorée|natural|neural|google/i.test(v.name);
+const isFrance = v => /^fr[-_]FR/i.test(v.lang);
+// Français de France d'abord, puis les autres français (Canada, Belgique, Suisse…).
+const byRegion = list => [...list.filter(isFrance), ...list.filter(v => !isFrance(v))];
+const REGIONS = { FR: 'France', CA: 'Canada', BE: 'Belgique', CH: 'Suisse', LU: 'Luxembourg' };
+export const voiceRegion = v => REGIONS[(v.lang.split(/[-_]/)[1] || '').toUpperCase()] || '';
 export function useVoices() {
   const [list, setList] = useState(() => (canSpeak ? synth.getVoices() : []));
   useEffect(() => {
@@ -33,7 +38,7 @@ export function useVoices() {
     synth.addEventListener?.('voiceschanged', f);
     return () => synth.removeEventListener?.('voiceschanged', f);
   }, []);
-  const fr = list.filter(isFr);
+  const fr = byRegion(list.filter(isFr));
   return fr.length ? fr : list;
 }
 function pickVoice() {
@@ -41,8 +46,8 @@ function pickVoice() {
   const all = synth.getVoices();
   const chosen = all.find(v => v.voiceURI === settings.voice);
   if (chosen) return chosen;
-  const fr = all.filter(isFr);
-  return fr.find(nice) || fr.find(v => /fr-FR/i.test(v.lang)) || fr[0] || null;
+  const fr = all.filter(isFr), france = fr.filter(isFrance);
+  return france.find(nice) || france.find(v => v.default) || france[0] || fr.find(nice) || fr[0] || null;
 }
 export const defaultVoiceURI = () => pickVoice()?.voiceURI || '';
 

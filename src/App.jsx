@@ -8,7 +8,7 @@ import RecipeEditor, { CatPicker } from './RecipeEditor.jsx';
 import { renderRecipeCard, cardFilename } from './shareCard.js';
 import { macros } from './nutrition.js';
 import { seasonsOf, currentSeason, SEASON_LABEL } from './season.js';
-import { canSpeak, speak, pauseSpeaking, resumeSpeaking, stopSpeaking, speakable, recipeScript, stepScript, useVoiceSettings, useVoices, getVoiceSettings, defaultVoiceURI } from './speech.js';
+import { canSpeak, speak, pauseSpeaking, resumeSpeaking, stopSpeaking, speakable, recipeScript, stepScript, useVoiceSettings, useVoices, getVoiceSettings, defaultVoiceURI, voiceRegion } from './speech.js';
 import { NEWS, NEWS_ICONS, latestNews, newsSeen, markNewsSeen, newsVisited, markNewsVisited } from './news.js';
 import { HeartButton, Confetti, Swipeable, flyDots, withHeroTransition, supportsHeroTransition } from './anim.jsx';
 
@@ -930,7 +930,7 @@ function VoiceSheet({ onClose }) {
         <select id="zc-voice" value={current} onChange={e => setVoice({ voice: e.target.value })}
           style={{ font: 'inherit', fontSize: 15, fontWeight: 500, color: 'var(--color-text)', background: 'var(--color-surface)', border: '1px solid var(--color-divider)', borderRadius: 14, padding: '10px 12px' }}>
           {voices.length === 0 && <option value="">Voix de l'appareil</option>}
-          {voices.map(v => <option key={v.voiceURI} value={v.voiceURI}>{v.name}{v.localService ? '' : ' · en ligne'}</option>)}
+          {voices.map(v => <option key={v.voiceURI} value={v.voiceURI}>{v.name}{voiceRegion(v) ? ' · ' + voiceRegion(v) : ''}{v.localService ? '' : ' · en ligne'}</option>)}
         </select>
       </label>
       <label htmlFor="zc-rate" style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13, fontWeight: 700, color: 'var(--color-neutral-700)' }}>
