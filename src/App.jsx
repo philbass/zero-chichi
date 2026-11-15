@@ -1020,8 +1020,6 @@ function NewsItem({ it, onAction }) {
   );
 }
 
-const newRecipesOf = (recipes, n) => recipes.filter(r => !r.custom && addedOf(r) === n.date).reverse();
-
 function NewsView({ recipes, wide, onBack, onOpen, onAction }) {
   const px = wide ? 40 : 22;
   return (
@@ -1032,26 +1030,12 @@ function NewsView({ recipes, wide, onBack, onOpen, onAction }) {
         <div className="muted" style={{ fontSize: 13 }}>Ce qui a changé dans Zéro Chichi</div>
       </div>
       {NEWS.map(n => {
-        const fresh = newRecipesOf(recipes, n);
         return (
           <section key={n.id} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <span className="tag tag-accent" style={{ alignSelf: 'flex-start' }}>{fmtDate(n.date)}</span>
               <h2 className="h" style={{ fontSize: 24, margin: 0 }}>{n.title}</h2>
             </div>
-            {fresh.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', color: 'var(--color-neutral-700)' }}>{(fresh.length > 1 ? fresh.length + ' nouvelles recettes' : '1 nouvelle recette')}</div>
-                <div className={wide ? '' : 'hscroll'} style={wide ? { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 14 } : { gap: 10, paddingBottom: 4 }}>
-                  {fresh.map(r => (
-                    <button key={r.id} className="reset press" onClick={e => onOpen(r, e)} style={{ flex: 'none', width: wide ? 'auto' : 128, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      <div data-thumb style={{ width: '100%', height: 104, borderRadius: 22, background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 10 }} />
-                      <div className="h" style={{ fontSize: 13.5, lineHeight: 1.2 }}>{r.name}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
             {n.groups.map(g => (
               <div key={g.name} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', color: 'var(--color-neutral-700)' }}>{g.name}</div>
