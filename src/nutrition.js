@@ -32,6 +32,7 @@ const FOODS = [
   [['chorizo'], 450, 24, 2, 38],
   [['foie gras'], 460, 7, 4, 45, 550], // un lobe cru ≈ 550 g
   [['saumon fume'], 180, 22, 0, 10],
+  [['saumon'], 200, 20, 0, 13],
   [['morue salee'], 160, 34, 0, 1.5],
   // Œufs et produits laitiers
   [['jaunes d\'oeuf', 'jaune d\'oeuf', 'jaunes d\'oeufs'], 340, 16, 0.5, 30, 18],
