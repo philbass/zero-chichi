@@ -30,7 +30,7 @@ const FOODS = [
   [['lardons', 'lard fume', 'lard ou chorizo'], 300, 15, 0.5, 27],
   [['des de jambon', 'jambon'], 115, 19, 1, 4],
   [['chorizo'], 450, 24, 2, 38],
-  [['foie gras'], 460, 7, 4, 45, 550], // un lobe cru ≈ 550 g
+  [['foie gras'], 460, 7, 4, 45, 650], // un lobe cru ≈ 600 à 700 g
   [['saumon fume'], 180, 22, 0, 10],
   [['saumon'], 200, 20, 0, 13],
   [['morue salee'], 160, 34, 0, 1.5],
