@@ -7,6 +7,7 @@ import { APP_URL, APP_URL_SHORT, recipeUrl, takeDeepLink, QRCode, shareLink, use
 import RecipeEditor, { CatPicker } from './RecipeEditor.jsx';
 import { renderRecipeCard, cardFilename } from './shareCard.js';
 import { macros } from './nutrition.js';
+import { seasonsOf, currentSeason, SEASON_LABEL } from './season.js';
 import { NEWS, NEWS_ICONS, latestNews, newsSeen, markNewsSeen, newsVisited, markNewsVisited } from './news.js';
 import { HeartButton, Confetti, Swipeable, flyDots, withHeroTransition, supportsHeroTransition } from './anim.jsx';
 
@@ -337,7 +338,7 @@ export default function App() {
                 {latest.map(r => (
                   <button key={r.id} className="reset press" onClick={e => openRecipe(r, e)}
                     style={{ flex: 'none', width: wide ? 'auto' : 180, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div data-thumb className="illus" style={{ width: '100%', height: wide ? 170 : 150, borderRadius: 28, background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 16 }} />
+                    <div data-thumb className="illus" style={{ position: 'relative', width: '100%', height: wide ? 170 : 150, borderRadius: 28, background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 16 }}><SeasonBadge r={r} /></div>
                     <div className="h" style={{ fontSize: 16, lineHeight: 1.2 }}>{r.name}</div>
                     <div className="muted" style={{ fontSize: 12, marginTop: -6 }}>{meta(r)}</div>
                   </button>
@@ -357,7 +358,7 @@ export default function App() {
                 {random3.map(r => (
                   <button key={rolling + '-' + r.id} className="reset press flip-in" onClick={e => openRecipe(r, e)}
                     style={{ flex: 'none', width: wide ? 'auto' : 180, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div data-thumb className="illus" style={{ width: '100%', height: wide ? 170 : 150, borderRadius: 28, background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 16 }} />
+                    <div data-thumb className="illus" style={{ position: 'relative', width: '100%', height: wide ? 170 : 150, borderRadius: 28, background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 16 }}><SeasonBadge r={r} /></div>
                     <div className="h" style={{ fontSize: 16, lineHeight: 1.2 }}>{r.name}</div>
                     <div className="muted" style={{ fontSize: 12, marginTop: -6 }}>{meta(r)}</div>
                   </button>
@@ -440,7 +441,7 @@ export default function App() {
                 <div role="button" tabIndex={0} className="press" onClick={e => openRecipe(r, e)}
                   onKeyDown={e => { if (e.key === 'Enter') openRecipe(r, e); }}
                   style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8, borderRadius: 26, background: 'var(--color-surface)', cursor: 'pointer' }}>
-                  <div data-thumb style={{ width: 64, height: 64, flex: 'none', borderRadius: 20, background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 6 }} />
+                  <div data-thumb style={{ position: 'relative', width: 64, height: 64, flex: 'none', borderRadius: 20, background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 6 }}><SeasonBadge r={r} small /></div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="h" style={{ fontSize: 17, lineHeight: 1.2 }}>{r.name}</div>
                     <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>{meta(r)}</div>
@@ -697,6 +698,7 @@ function RecipeView({ r, land, wide, fav, portions, setPortions, onBack, onFav, 
         {waitLabel(r) && <span className="tag tag-neutral">+ {waitLabel(r)}</span>}
         <span className="tag tag-accent">{r.ing.length} ingrédients</span>
         <span className={'tag ' + ({ Facile: 'tag-accent-2', Moyen: 'tag-accent', Long: 'tag-neutral' })[difficulty(r)]}>{difficulty(r)}</span>
+        <SeasonTag r={r} />
         {r.cats.map(c => <span key={c} className="tag tag-neutral">{c}</span>)}
         <button className="reset tag" onClick={onCats} aria-label="Modifier les catégories"
           style={{ border: '1px dashed var(--color-neutral-500)', gap: 4, cursor: 'pointer' }}>
@@ -752,6 +754,58 @@ function RecipeView({ r, land, wide, fav, portions, setPortions, onBack, onFav, 
     <div className="screen" style={{ display: 'flex', flexDirection: 'column', paddingBottom: 'calc(110px + var(--bottom-safe))' }}>
       {hero}{head}{body}
     </div>
+  );
+}
+
+/* ── Saisons ─────────────────────────────────────────── */
+const SEASON_ICON = {
+  printemps: ['M12 7.5a4.5 4.5 0 1 1 4.5 4.5 4.5 4.5 0 1 1-4.5 4.5 4.5 4.5 0 1 1-4.5-4.5A4.5 4.5 0 1 1 12 7.5z', 'M12 10a2 2 0 1 0 0 4a2 2 0 1 0 0-4'],
+  'été': ['M12 7a5 5 0 1 0 0 10a5 5 0 1 0 0-10', 'M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4'],
+  automne: ['M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z', 'M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12'],
+  hiver: ['M2 12h20', 'M12 2v20', 'm20 16-4-4 4-4', 'm4 8 4 4-4 4', 'm16 4-4 4-4-4', 'm8 20 4-4 4 4'],
+};
+const SEASON_COLOR = {
+  printemps: ['#F9DDE6', '#8B3A5C'], 'été': ['#FCE7A6', '#7A5A00'], automne: ['#F6CFA8', '#8A4B16'], hiver: ['#D8E8F5', '#2D5674'],
+};
+const SEASON_VARIANT = (typeof location !== 'undefined' && new URLSearchParams(location.search).get('saison')) || 'A';
+
+function SeasonBadge({ r, small }) {
+  const ss = seasonsOf(r);
+  if (!ss.length) return null;
+  const pos = { position: 'absolute', top: small ? -4 : 10, left: small ? -4 : 10, zIndex: 1, pointerEvents: 'none' };
+  if (SEASON_VARIANT === 'C') {
+    if (!ss.includes(currentSeason())) return null;
+    return small
+      ? <span style={{ ...pos, width: 22, height: 22, borderRadius: '50%', background: 'var(--color-accent-2-700)', color: '#fff', display: 'grid', placeItems: 'center', boxShadow: 'var(--shadow-md)' }}><Icon d={SEASON_ICON.automne} size={12} sw={2.6} /></span>
+      : <span style={{ ...pos, display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px 4px 8px', borderRadius: 999, background: 'var(--color-accent-2-700)', color: '#fff', fontSize: 11.5, fontWeight: 700, boxShadow: 'var(--shadow-md)' }}><Icon d={SEASON_ICON.automne} size={13} sw={2.6} />De saison</span>;
+  }
+  if (SEASON_VARIANT === 'B' || small) {
+    return (
+      <span style={{ ...pos, display: 'flex', gap: 3 }}>
+        {ss.map(x => (
+          <span key={x} title={SEASON_LABEL[x]} style={{ width: small ? 22 : 30, height: small ? 22 : 30, borderRadius: '50%', background: SEASON_COLOR[x][0], color: SEASON_COLOR[x][1], display: 'grid', placeItems: 'center', boxShadow: 'var(--shadow-md)' }}>
+            <Icon d={SEASON_ICON[x]} size={small ? 12 : 16} sw={2.4} />
+          </span>
+        ))}
+      </span>
+    );
+  }
+  const [bg, fg] = SEASON_COLOR[ss[0]];
+  return (
+    <span style={{ ...pos, display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px 4px 8px', borderRadius: 999, background: bg, color: fg, fontSize: 11.5, fontWeight: 700, boxShadow: 'var(--shadow-md)' }}>
+      <Icon d={SEASON_ICON[ss[0]]} size={13} sw={2.4} />{ss.map(x => SEASON_LABEL[x]).join(' · ')}
+    </span>
+  );
+}
+
+function SeasonTag({ r }) {
+  const ss = seasonsOf(r);
+  if (!ss.length) return <span className="tag tag-neutral">Toute l'année</span>;
+  const [bg, fg] = SEASON_COLOR[ss[0]];
+  return (
+    <span className="tag" style={{ background: bg, color: fg, gap: 4 }}>
+      <Icon d={SEASON_ICON[ss[0]]} size={12} sw={2.4} />{ss.map(x => SEASON_LABEL[x]).join(' · ')}{ss.includes(currentSeason()) ? ' · de saison' : ''}
+    </span>
   );
 }
 
