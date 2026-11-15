@@ -11,6 +11,7 @@ const FOODS = [
   // Viandes et poissons
   [['ailerons de poulet'], 150, 12, 0, 11, 45], // poids avec os
   [['cuisses de poulet'], 150, 14, 0, 10, 250], // poids avec os
+  [['cuisses de canard confites', 'canard confit'], 260, 17, 0, 21, 250], // poids avec os
   [['filets de poulet', 'poulet'], 120, 23, 0, 2.5, 140],
   [['blanquette de veau', 'tendron de veau'], 200, 19, 0, 14, 200],
   [['jarret de veau'], 160, 20, 0, 9, 300],
@@ -100,7 +101,7 @@ const FOODS = [
   [['piment'], 40, 2, 7, 0.4, 15],
   [['cive', 'cebette', 'ciboulette', 'persil', 'coriandre', 'basilic', 'aneth', 'cerfeuil'], 30, 3, 3, 0.6, 3],
   // Matières grasses, sucres, sauces
-  [['huile', 'graisse d\'oie', 'saindoux'], 900, 0, 0, 100],
+  [['huile', 'graisse d\'oie', 'graisse de canard', 'saindoux'], 900, 0, 0, 100],
   [['sucre', 'miel'], 390, 0, 98, 0],
   [['chocolat noir'], 560, 7, 33, 42],
   [['amandes'], 610, 21, 6, 53],
@@ -122,7 +123,7 @@ const FOODS = [
 const UNIT_G = {
   g: 1, kg: 1000, mg: 0.001, ml: 1, cl: 10, dl: 100, L: 1000,
   'c. à s.': 15, 'c. à c.': 5, pincée: 0.5, pincées: 0.5, pointe: 0.2,
-  gousse: 5, gousses: 5, branche: 3, branches: 3, feuille: 0.5, feuilles: 0.5, tige: 40,
+  gousse: 5, gousses: 5, tête: 50, branche: 3, branches: 3, feuille: 0.5, feuilles: 0.5, tige: 40,
   noix: 10, noisette: 5, sachet: 11, botte: 50, bouquet: 30, verre: 120, shot: 30, cm: 5,
   boîte: null, 'grosse boîte': 800, brique: 200, rouleau: 180, paquet: 400, tranches: null,
 };
