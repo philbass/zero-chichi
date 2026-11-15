@@ -2,6 +2,21 @@
 // Les nouvelles recettes sont retrouvées automatiquement grâce à leur date d'ajout (champ `added`).
 export const NEWS = [
   {
+    id: '2026-11-15',
+    date: '2026-11-15',
+    title: 'Les recettes de saison',
+    groups: [
+      {
+        name: 'Saisons',
+        items: [
+          { icon: 'leaf', title: 'Rubrique « De saison »', text: "Sur l'accueil, des recettes qui vont bien en ce moment. Elle change toute seule avec les saisons.", action: 'home' },
+          { icon: 'leaf', title: 'Badge « De saison »', text: 'Sur les vignettes, il repère les recettes dont les légumes et les fruits sont de saison.' },
+          { icon: 'calendar', title: 'La saison sur chaque fiche', text: "« Automne · Hiver », « Été »… ou « Toute l'année », d'après les ingrédients et le type de plat." },
+        ],
+      },
+    ],
+  },
+  {
     id: '2026-11-14',
     date: '2026-11-14',
     title: 'Partage, tablette et macros',
@@ -51,6 +66,8 @@ export const NEWS_ICONS = {
   dice: ['M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4z', 'M8.5 8.5h.01M15.5 15.5h.01M15.5 8.5h.01M8.5 15.5h.01'],
   sparkle: ['M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z', 'M19 17l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z'],
   image: ['M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z', 'M8.5 7a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3', 'm21 15-5-5L5 21'],
+  leaf: ['M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z', 'M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12'],
+  calendar: ['M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z', 'M16 2v4M8 2v4M3 10h18'],
   sort: ['M3 6h13M3 12h9M3 18h5', 'M18 8v12m0 0-3-3m3 3 3-3'],
 };
 

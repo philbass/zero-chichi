@@ -215,6 +215,16 @@ export default function App() {
   const byNewest = useMemo(() => recipes.map((r, i) => [r, addedOf(r) || '', i])
     .sort((a, b) => (a[1] === b[1] ? b[2] - a[2] : a[1] < b[1] ? 1 : -1)).map(x => x[0]), [recipes]);
   const latest = useMemo(() => byNewest.slice(0, 8), [byNewest]);
+  // De saison : recettes de la saison actuelle, mélangées une fois par lancement.
+  const [seasonSeed] = useState(() => Math.random());
+  const nowSeason = currentSeason();
+  const seasonal = useMemo(() => {
+    let x = Math.floor(seasonSeed * 2147483646) + 1;
+    const rnd = () => (x = (x * 16807) % 2147483647) / 2147483647;
+    const a = recipes.filter(r => imgUrl(r) && seasonsOf(r).includes(nowSeason));
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a.slice(0, 8);
+  }, [recipes, seasonSeed, nowSeason]);
 
   let rows = [], listTitle = '', listSub = '', emptyTitle = '', emptyText = '', browse = false, searchInfo = '';
   if (s === 'search') {
@@ -345,6 +355,25 @@ export default function App() {
                 ))}
               </div>
             </section>
+
+            {seasonal.length > 0 && (
+              <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div>
+                  <h2 className="h" style={{ fontSize: 20, margin: 0 }}>De saison</h2>
+                  <div className="muted" style={{ fontSize: 13 }}>Les recettes qui vont bien {({ printemps: 'au printemps', 'été': "en été", automne: 'en automne', hiver: 'en hiver' })[nowSeason]}</div>
+                </div>
+                <div className={wide ? 'cascade' : 'hscroll cascade'} style={wide ? { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 18 } : { gap: 12, paddingBottom: 4 }}>
+                  {seasonal.map(r => (
+                    <button key={r.id} className="reset press" onClick={e => openRecipe(r, e)}
+                      style={{ flex: 'none', width: wide ? 'auto' : 180, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div data-thumb className="illus" style={{ width: '100%', height: wide ? 170 : 150, borderRadius: 28, background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 16 }} />
+                      <div className="h" style={{ fontSize: 16, lineHeight: 1.2 }}>{r.name}</div>
+                      <div className="muted" style={{ fontSize: 12, marginTop: -6 }}>{meta(r)}</div>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
 
             <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -767,7 +796,7 @@ const SEASON_ICON = {
 const SEASON_COLOR = {
   printemps: ['#F9DDE6', '#8B3A5C'], 'été': ['#FCE7A6', '#7A5A00'], automne: ['#F6CFA8', '#8A4B16'], hiver: ['#D8E8F5', '#2D5674'],
 };
-const SEASON_VARIANT = (typeof location !== 'undefined' && new URLSearchParams(location.search).get('saison')) || 'A';
+const SEASON_VARIANT = 'C'; // badge « De saison » seulement sur les recettes de la saison actuelle
 
 function SeasonBadge({ r, small }) {
   const ss = seasonsOf(r);
