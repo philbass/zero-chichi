@@ -30,6 +30,7 @@ const FOODS = [
   [['lardons', 'lard fume', 'lard ou chorizo'], 300, 15, 0.5, 27],
   [['des de jambon', 'jambon'], 115, 19, 1, 4],
   [['chorizo'], 450, 24, 2, 38],
+  [['foie gras'], 460, 7, 4, 45, 550], // un lobe cru ≈ 550 g
   [['saumon fume'], 180, 22, 0, 10],
   [['morue salee'], 160, 34, 0, 1.5],
   // Œufs et produits laitiers
@@ -117,6 +118,7 @@ const FOODS = [
   [['vin blanc', 'cidre'], 70, 0.1, 1.5, 0],
   [['biere'], 40, 0.4, 3, 0],
   [['calvados', 'rhum'], 230, 0, 0, 0],
+  [['porto'], 160, 0, 12, 0],
 ];
 
 // Poids en grammes d'une unité (densité ≈ 1 pour les liquides).

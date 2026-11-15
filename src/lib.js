@@ -7,7 +7,7 @@ export const fmt = n => String(Math.round(n * 10) / 10).replace('.', ',');
 export const fmtT = t => { if (t < 60) return t + ' min'; const h = Math.floor(t / 60), m = t % 60; return h + ' h' + (m ? ' ' + m : ''); };
 // Temps d'attente sans rien faire (marinade, repos, au frais…) : r.wait = [minutes, 'type'].
 export const WAIT_TYPES = ['de marinade', 'de repos', 'au frais', 'de trempage', 'de dessalage'];
-export const fmtWaitT = m => (m >= 600 ? '1 nuit' : fmtT(m));
+export const fmtWaitT = m => (m >= 1440 ? (d => d + (d > 1 ? ' jours' : ' jour'))(Math.round(m / 1440)) : m >= 600 ? '1 nuit' : fmtT(m));
 export const waitLabel = r => (r.wait && r.wait[0] > 0 ? fmtWaitT(r.wait[0]) + ' ' + (r.wait[1] || 'de repos') : '');
 /** Temps total, attente comprise (sert aux filtres « ≤ 30 min »). */
 export const totalT = r => r.t + (r.wait && r.wait[0] > 0 ? r.wait[0] : 0);

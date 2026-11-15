@@ -22,7 +22,7 @@ const NOT_FRESH = /sechee|tomates? pelee|concentre|confite|poudre|jus de|zeste|p
 
 const DISH = [
   [/potee|blanquette|tartiflette|parmentier|joue de boeuf|osso buco|langue de boeuf|tete de veau|confite|braise|veloute|soupe|gratin|fondue|raclette|vallee d'auge/, ['automne', 'hiver'], 2],
-  [/noel/, ['hiver'], 3],
+  [/noel|foie gras/, ['hiver'], 3],
   [/agneau/, ['printemps'], 2],
   [/salade|tartare|caviar d'aubergine|pesto|gaspacho/, ['été'], 2],
 ];

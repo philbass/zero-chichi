@@ -131,7 +131,7 @@ const lowerFirst = s => s.charAt(0).toLowerCase() + s.slice(1);
 export function recipeScript(r, portions) {
   const k = portions / r.p;
   const who = r.yield ? `${portions} ${portions > 1 ? r.yield[1] : r.yield[0]}` : `${portions} ${portions > 1 ? 'personnes' : 'personne'}`;
-  const wait = r.wait?.[0] > 0 ? `, plus ${r.wait[0] >= 600 ? 'une nuit' : sayTime(r.wait[0])} ${r.wait[1] || 'de repos'}` : '';
+  const wait = r.wait?.[0] > 0 ? `, plus ${r.wait[0] >= 1440 ? (d => d + (d > 1 ? ' jours' : ' jour'))(Math.round(r.wait[0] / 1440)) : r.wait[0] >= 600 ? 'une nuit' : sayTime(r.wait[0])} ${r.wait[1] || 'de repos'}` : '';
   const out = [`Aujourd'hui, au menu : ${r.name}. Une recette pour ${who}, prête en ${sayTime(r.t)}${wait}.`];
   out.push(`Côté courses, il te faut ${r.ing.length} ingrédients.`);
   const items = r.ing.map(i => sayIng(i, k));
