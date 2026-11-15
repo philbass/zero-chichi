@@ -2,6 +2,22 @@
 // Les nouvelles recettes sont retrouvées automatiquement grâce à leur date d'ajout (champ `added`).
 export const NEWS = [
   {
+    id: '2026-11-15-lecture',
+    date: '2026-11-15',
+    title: 'Les recettes à voix haute',
+    groups: [
+      {
+        name: 'Écouter',
+        items: [
+          { icon: 'speaker', title: 'Écouter la recette', text: 'Sur chaque fiche, un récit complet : présentation, ingrédients pour ton nombre de personnes, puis les étapes.', action: 'random' },
+          { icon: 'speaker', title: 'Les étapes lues en cuisinant', text: 'Dans « Cuisiner », touche le haut-parleur : chaque étape est lue quand elle s\'affiche.' },
+          { icon: 'clock', title: 'Minuteurs annoncés', text: 'La fin d\'un minuteur est dite à voix haute, en plus de la sonnerie.' },
+          { icon: 'sliders', title: 'Ta voix, ta vitesse', text: 'Choisis la voix et la vitesse de lecture. Les réglages restent sur ton appareil.', action: 'voice' },
+        ],
+      },
+    ],
+  },
+  {
     id: '2026-11-15',
     date: '2026-11-15',
     title: 'Les recettes de saison',
@@ -68,6 +84,8 @@ export const NEWS_ICONS = {
   image: ['M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z', 'M8.5 7a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3', 'm21 15-5-5L5 21'],
   leaf: ['M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z', 'M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12'],
   calendar: ['M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z', 'M16 2v4M8 2v4M3 10h18'],
+  speaker: ['M11 5 6 9H2v6h4l5 4z', 'M15.5 8.5a5 5 0 0 1 0 7', 'M19 5a10 10 0 0 1 0 14'],
+  sliders: ['M4 21v-7', 'M4 10V3', 'M12 21v-9', 'M12 8V3', 'M20 21v-5', 'M20 12V3', 'M1 14h6', 'M9 8h6', 'M17 16h6'],
   sort: ['M3 6h13M3 12h9M3 18h5', 'M18 8v12m0 0-3-3m3 3 3-3'],
 };
 

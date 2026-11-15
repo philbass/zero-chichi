@@ -4,7 +4,9 @@ import { fmtClock } from './lib.js';
 
 const CLOCK = ['M12 22a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z', 'M12 9v4l2 2M10 2h4'];
 
-export function useTimers(flash) {
+export function useTimers(flash, onRing) {
+  const ringRef = useRef(onRing);
+  ringRef.current = onRing;
   const [timers, setTimers] = useState([]);
   const [now, setNow] = useState(() => Date.now());
   const audio = useRef(null);
@@ -49,6 +51,7 @@ export function useTimers(flash) {
     if (!due.length) return;
     setTimers(ts => ts.map(t => (due.some(d => d.id === t.id) ? { ...t, done: true } : t)));
     flash('Minuteur terminé : ' + due[0].label);
+    ringRef.current?.(due[0]);
   }, [now, timers, flash]);
 
   // Sonnerie répétée tant qu'on n'a pas validé (1 minute au plus).

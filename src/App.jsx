@@ -8,12 +8,19 @@ import RecipeEditor, { CatPicker } from './RecipeEditor.jsx';
 import { renderRecipeCard, cardFilename } from './shareCard.js';
 import { macros } from './nutrition.js';
 import { seasonsOf, currentSeason, SEASON_LABEL } from './season.js';
+import { canSpeak, speak, pauseSpeaking, resumeSpeaking, stopSpeaking, speakable, recipeScript, stepScript, useVoiceSettings, useVoices, getVoiceSettings, defaultVoiceURI } from './speech.js';
 import { NEWS, NEWS_ICONS, latestNews, newsSeen, markNewsSeen, newsVisited, markNewsVisited } from './news.js';
 import { HeartButton, Confetti, Swipeable, flyDots, withHeroTransition, supportsHeroTransition } from './anim.jsx';
 
 const TINTS = ['accent', 'accent-2', 'neutral'];
 const HEART = 'M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z';
 const SHARE = ['M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8', 'M16 6l-4-4-4 4M12 2v13'];
+const SPEAKER = ['M11 5 6 9H2v6h4l5 4z', 'M15.5 8.5a5 5 0 0 1 0 7', 'M19 5a10 10 0 0 1 0 14'];
+const SPEAKER_OFF = ['M11 5 6 9H2v6h4l5 4z', 'm22 9-6 6', 'm16 9 6 6'];
+const SLIDERS = ['M4 21v-7', 'M4 10V3', 'M12 21v-9', 'M12 8V3', 'M20 21v-5', 'M20 12V3', 'M1 14h6', 'M9 8h6', 'M17 16h6'];
+const PLAY = 'M7 4.5v15l12-7.5z';
+const PAUSE = ['M7 4h3.5v16H7z', 'M13.5 4H17v16h-3.5z'];
+const STOP = 'M6 6h12v12H6z';
 const PENCIL = 'M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z';
 const ICONS = {
   home: ['m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z', 'M9 22V12h6v10'],
@@ -152,7 +159,9 @@ export default function App() {
     toastT.current = setTimeout(() => setToast(''), 1600);
   }, []);
   const flashRef = useRef(flash);
-  const T = useTimers(flash);
+  const T = useTimers(flash, t => {
+    if (canSpeak && getVoiceSettings().announceTimers) speak('Minuteur terminé. ' + speakable(t.label) + ' : le temps est écoulé.');
+  });
   const openTimer = tm => { const id = tm.recipeId; if (!(s === 'cook' && top.id === id)) go({ s: 'cook', id }); setStep(tm.step); };
 
   const go = e => {
@@ -399,6 +408,12 @@ export default function App() {
               style={{ alignSelf: 'center', fontSize: 13.5, color: 'var(--color-neutral-700)', textDecoration: 'underline', textUnderlineOffset: 3 }}>
               Nouveautés de l'app
             </button>
+            {canSpeak && (
+              <button className="btn btn-ghost" onClick={() => setSheet({ type: 'voice' })}
+                style={{ alignSelf: 'center', fontSize: 13.5, color: 'var(--color-neutral-700)', textDecoration: 'underline', textUnderlineOffset: 3, marginTop: -16 }}>
+                Réglages de lecture
+              </button>
+            )}
 
           </div>
         )}
@@ -499,7 +514,7 @@ export default function App() {
 
         {/* ── Fiche recette ── */}
         {isRecipe && (
-          <RecipeView r={recipe} land={tablet === 'land'} wide={wide} fav={favs.includes(recipe.id)} portions={portions} setPortions={setPortions}
+          <RecipeView r={recipe} land={tablet === 'land'} wide={wide} onVoice={() => setSheet({ type: 'voice' })} fav={favs.includes(recipe.id)} portions={portions} setPortions={setPortions}
             onBack={back} onFav={() => toggleFav(recipe.id)}
             onShare={() => setSheet({ type: 'share', id: recipe.id })}
             onCats={() => setSheet({ type: 'cats', id: recipe.id })}
@@ -538,6 +553,7 @@ export default function App() {
               if (a === 'app') setSheet({ type: 'app' });
               else if (a === 'home') tab('home');
               else if (a === 'new') go({ s: 'new' });
+              else if (a === 'voice') setSheet({ type: 'voice' });
               else if (a === 'random') { const pool = recipes.filter(r => !r.custom); go({ s: 'recipe', id: pool[Math.floor(Math.random() * pool.length)].id }); }
             }} />
         )}
@@ -600,7 +616,7 @@ export default function App() {
 
       {/* ── Mode cuisine ── */}
       {isCook && (
-        <CookView r={recipe} wide={wide} portions={portions} step={step} setStep={setStep} onClose={back} T={T} onOpenTimer={openTimer}
+        <CookView r={recipe} onVoice={() => setSheet({ type: 'voice' })} wide={wide} portions={portions} step={step} setStep={setStep} onClose={back} T={T} onOpenTimer={openTimer}
           onDone={() => { back(); flash('Bon appétit'); setConfetti(true); }} />
       )}
 
@@ -613,6 +629,7 @@ export default function App() {
       )}
       {sheet?.type === 'app' && <AppShareSheet onClose={() => setSheet(null)} flash={flash} />}
       {sheet?.type === 'install' && <InstallSheet onClose={() => setSheet(null)} />}
+      {sheet?.type === 'voice' && <VoiceSheet onClose={() => setSheet(null)} />}
       {sheet?.type === 'incoming' && (
         <IncomingSheet r={sheet.r}
           existing={recipes.find(x => x.custom && x.name === sheet.r.name && JSON.stringify(x.ing) === JSON.stringify(sheet.r.ing))}
@@ -701,7 +718,7 @@ function ChipRow({ label, options, value, onChange, render }) {
   );
 }
 
-function RecipeView({ r, land, wide, fav, portions, setPortions, onBack, onFav, onShare, onCats, onEdit }) {
+function RecipeView({ r, land, wide, onVoice, fav, portions, setPortions, onBack, onFav, onShare, onCats, onEdit }) {
   const ing = ingList(r, portions);
   const px = land ? 0 : wide ? 40 : 22;
   const hero = (
@@ -735,6 +752,7 @@ function RecipeView({ r, land, wide, fav, portions, setPortions, onBack, onFav, 
         </button>
       </div>
       {addedOf(r) && <div className="muted" style={{ fontSize: 13 }}>Ajoutée le {fmtDate(addedOf(r))}</div>}
+      <ListenBar r={r} portions={portions} onSettings={onVoice} />
       <MacrosCard r={r} />
       {onEdit && (
         <button className="btn btn-ghost" onClick={onEdit} style={{ alignSelf: 'flex-start', textDecoration: 'underline', textUnderlineOffset: 3, fontSize: 14, marginTop: -2 }}>
@@ -838,6 +856,103 @@ function SeasonTag({ r }) {
   );
 }
 
+/* ── Lecture à voix haute ─────────────────────────────── */
+function ListenBar({ r, portions, onSettings }) {
+  const [st, setSt] = useState(null); // { playing, paused, index, total }
+  useEffect(() => () => stopSpeaking(), []);
+  useEffect(() => { stopSpeaking(); setSt(null); }, [r.id, portions]);
+  if (!canSpeak) return null;
+  const active = st && st.index >= 0;
+  const btn = { height: 40, borderRadius: 999, display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 700 };
+  return (
+    <div style={{ marginTop: 2, padding: 8, borderRadius: 22, background: 'var(--color-accent-2-100)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+      {!active ? (
+        <button className="reset press" onClick={() => speak(recipeScript(r, portions), setSt)}
+          style={{ ...btn, padding: '0 16px 0 12px', background: 'var(--color-accent-2-700)', color: 'var(--color-bg)' }}>
+          <Icon d={PLAY} size={16} fill="currentColor" sw={0} />Écouter la recette
+        </button>
+      ) : (
+        <>
+          <button className="reset press" onClick={() => (st.paused ? resumeSpeaking() : pauseSpeaking())}
+            style={{ ...btn, padding: '0 16px 0 12px', background: 'var(--color-accent-2-700)', color: 'var(--color-bg)' }}>
+            <Icon d={st.paused ? PLAY : PAUSE} size={16} fill="currentColor" sw={0} />{st.paused ? 'Reprendre' : 'Pause'}
+          </button>
+          <button className="reset press" onClick={() => { stopSpeaking(); setSt(null); }} aria-label="Arrêter la lecture"
+            style={{ ...btn, width: 40, justifyContent: 'center', background: 'var(--color-bg)', color: 'var(--color-accent-2-800)' }}>
+            <Icon d={STOP} size={14} fill="currentColor" sw={0} />
+          </button>
+        </>
+      )}
+      <div style={{ flex: 1, minWidth: 80, fontSize: 12.5, color: 'var(--color-accent-2-800)', fontWeight: 600 }}>
+        {active ? (st.paused ? 'En pause' : 'Lecture en cours') + ' · ' + Math.round(((st.index + 1) / st.total) * 100) + ' %' : 'Ingrédients et étapes lus à voix haute'}
+      </div>
+      <button className="icon-btn" onClick={onSettings} aria-label="Réglages de lecture" style={{ width: 40, height: 40, color: 'var(--color-accent-2-800)' }}>
+        <Icon d={SLIDERS} size={18} sw={2.4} />
+      </button>
+    </div>
+  );
+}
+
+function Toggle({ id, label, hint, checked, onChange }) {
+  return (
+    <label htmlFor={id} style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: 'block', fontSize: 15, fontWeight: 600 }}>{label}</span>
+        {hint && <span className="muted" style={{ display: 'block', fontSize: 12.5 }}>{hint}</span>}
+      </span>
+      <input id={id} type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }} />
+      <span aria-hidden="true" style={{ width: 48, height: 28, flex: 'none', borderRadius: 999, padding: 3, background: checked ? 'var(--color-accent-2-700)' : 'var(--color-neutral-300)', transition: 'background-color .15s' }}>
+        <span style={{ display: 'block', width: 22, height: 22, borderRadius: '50%', background: 'var(--color-bg)', transform: checked ? 'translateX(20px)' : 'none', transition: 'transform .15s' }} />
+      </span>
+    </label>
+  );
+}
+
+const RATE_LABEL = v => (v <= 0.8 ? 'Très lente' : v < 0.95 ? 'Lente' : v <= 1.05 ? 'Normale' : v <= 1.2 ? 'Rapide' : 'Très rapide');
+
+function VoiceSheet({ onClose }) {
+  const [vs, setVoice] = useVoiceSettings();
+  const voices = useVoices();
+  const current = vs.voice && voices.some(v => v.voiceURI === vs.voice) ? vs.voice : defaultVoiceURI();
+  const fr = voices.some(v => /^fr/i.test(v.lang));
+  const tryIt = () => speak("Préchauffe le four à 180 degrés. Pendant ce temps, épluche les pommes et coupe-les en dés.");
+  useEffect(() => () => stopSpeaking(), []);
+  return (
+    <Sheet title="Réglages de lecture" onClose={onClose}>
+      <div className="muted" style={{ fontSize: 14, marginTop: -8 }}>Ces réglages sont gardés sur cet appareil. Chacun règle sa voix et sa vitesse sur son téléphone.</div>
+      {!fr && voices.length > 0 && (
+        <div style={{ padding: '10px 12px', borderRadius: 16, background: 'var(--color-accent-100)', fontSize: 13.5 }}>
+          Aucune voix française trouvée. Sur iPhone : Réglages, Accessibilité, Contenu énoncé, Voix, Français, pour en télécharger une.
+        </div>
+      )}
+      <label htmlFor="zc-voice" style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13, fontWeight: 700, color: 'var(--color-neutral-700)' }}>
+        Voix
+        <select id="zc-voice" value={current} onChange={e => setVoice({ voice: e.target.value })}
+          style={{ font: 'inherit', fontSize: 15, fontWeight: 500, color: 'var(--color-text)', background: 'var(--color-surface)', border: '1px solid var(--color-divider)', borderRadius: 14, padding: '10px 12px' }}>
+          {voices.length === 0 && <option value="">Voix de l'appareil</option>}
+          {voices.map(v => <option key={v.voiceURI} value={v.voiceURI}>{v.name}{v.localService ? '' : ' · en ligne'}</option>)}
+        </select>
+      </label>
+      <label htmlFor="zc-rate" style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13, fontWeight: 700, color: 'var(--color-neutral-700)' }}>
+        <span>Vitesse : <span style={{ color: 'var(--color-text)' }}>{RATE_LABEL(vs.rate)}</span></span>
+        <input id="zc-rate" type="range" min="0.7" max="1.4" step="0.05" value={vs.rate} onChange={e => setVoice({ rate: parseFloat(e.target.value) })}
+          style={{ width: '100%', accentColor: 'var(--color-accent-2-700)', height: 32 }} />
+        <span style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, fontWeight: 600 }}><span>Lente</span><span>Normale</span><span>Rapide</span></span>
+      </label>
+      <button className="btn btn-secondary" onClick={tryIt} style={{ height: 46, fontSize: 15, gap: 8 }}>
+        <Icon d={SPEAKER} size={18} sw={2.4} />Essayer
+      </button>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, paddingTop: 4 }}>
+        <Toggle id="zc-readsteps" label="Lire chaque étape dans « Cuisiner »" hint="Aussi activable avec le bouton haut-parleur du mode Cuisiner."
+          checked={vs.readSteps} onChange={v => setVoice({ readSteps: v })} />
+        <Toggle id="zc-announce" label="Annoncer la fin des minuteurs" hint="En plus de la sonnerie."
+          checked={vs.announceTimers} onChange={v => setVoice({ announceTimers: v })} />
+      </div>
+      <button className="btn btn-primary" onClick={onClose} style={{ height: 50, fontSize: 15 }}>C'est réglé</button>
+    </Sheet>
+  );
+}
+
 function MacrosCard({ r }) {
   const m = macros(r);
   if (!m.counted) return null;
@@ -868,7 +983,7 @@ function StepperBtn({ label, d, onClick }) {
   );
 }
 
-function CookView({ r, wide, portions, step, setStep, onClose, onDone, T, onOpenTimer }) {
+function CookView({ r, onVoice, wide, portions, step, setStep, onClose, onDone, T, onOpenTimer }) {
   const n = r.steps.length;
   const i = Math.min(step, n - 1);
   const last = i === n - 1;
@@ -880,6 +995,13 @@ function CookView({ r, wide, portions, step, setStep, onClose, onDone, T, onOpen
   const [slide, setSlide] = useState({ i, dir: 0 });
   if (slide.i !== i) setSlide({ i, dir: i > slide.i ? 1 : -1 });
   const dir = slide.i === i ? slide.dir : 0;
+
+  /* Lecture à voix haute de chaque étape, si elle est activée. */
+  const [vs, setVoice] = useVoiceSettings();
+  useEffect(() => {
+    if (canSpeak && vs.readSteps) speak(stepScript(r, i));
+  }, [i, vs.readSteps]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => stopSpeaking(), []);
 
   /* Garde l'écran allumé pendant qu'on cuisine, quand le navigateur le permet. */
   useEffect(() => {
@@ -903,8 +1025,21 @@ function CookView({ r, wide, portions, step, setStep, onClose, onDone, T, onOpen
         </aside>
       )}
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ fontSize: 14, fontWeight: 700 }}>Étape {i + 1} sur {n}</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, flex: 1 }}>Étape {i + 1} sur {n}</div>
+        {canSpeak && (
+          <>
+            <button className="icon-btn" onClick={onVoice} aria-label="Réglages de lecture" style={{ background: 'transparent', color: 'var(--color-bg)' }}>
+              <Icon d={SLIDERS} size={20} sw={2.4} />
+            </button>
+            <button className="reset press" onClick={() => setVoice({ readSteps: !vs.readSteps })} aria-pressed={vs.readSteps}
+              aria-label={vs.readSteps ? 'Couper la lecture des étapes' : 'Lire les étapes à voix haute'}
+              style={{ height: 44, padding: '0 14px 0 12px', borderRadius: 999, display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700,
+                background: vs.readSteps ? 'var(--color-bg)' : 'var(--color-accent-2-600)', color: vs.readSteps ? 'var(--color-accent-2-800)' : 'var(--color-bg)' }}>
+              <Icon d={vs.readSteps ? SPEAKER : SPEAKER_OFF} size={18} sw={2.4} />{vs.readSteps ? 'Lecture' : 'Muet'}
+            </button>
+          </>
+        )}
         <button className="icon-btn" onClick={onClose} aria-label="Fermer" style={{ background: 'var(--color-accent-2-600)', color: 'var(--color-bg)' }}>
           <CloseIcon />
         </button>
@@ -921,6 +1056,12 @@ function CookView({ r, wide, portions, step, setStep, onClose, onDone, T, onOpen
       <div key={i} className={dir > 0 ? 'step-next' : dir < 0 ? 'step-prev' : 'screen'} style={{ flex: 1, minHeight: 0, overflowY: 'auto', scrollbarWidth: 'none', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 18 }}>
         <div className="h" style={{ fontSize: (long ? 72 : 96) * (wide ? 1.4 : 1), lineHeight: 0.9, color: 'var(--color-accent-2-400)' }}>{i + 1}</div>
         <div className="h" aria-live="polite" style={{ fontSize: wide ? (long ? 36 : 46) : (long ? 26 : 32), lineHeight: 1.15, textWrap: 'pretty', maxWidth: 820 }}>{r.steps[i]}</div>
+        {canSpeak && vs.readSteps && (
+          <button className="reset press" onClick={() => speak(stepScript(r, i))}
+            style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 8, height: 40, padding: '0 16px 0 12px', borderRadius: 999, border: '2px solid var(--color-accent-2-400)', color: 'var(--color-bg)', fontSize: 14, fontWeight: 700 }}>
+            <Icon d={SPEAKER} size={18} sw={2.4} />Relire l'étape
+          </button>
+        )}
         {durations.map((d, k) => (
           <StepTimer key={k} T={T} timer={T.timers.find(t => t.key === keyOf(k))}
             d={{ ...d, onStart: () => T.start(keyOf(k), d.sec, r.name + ', étape ' + (i + 1), { recipeId: r.id, recipeName: r.name, step: i, short: 'Étape ' + (i + 1) }) }} />
