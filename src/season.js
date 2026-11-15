@@ -18,7 +18,7 @@ const PRODUCE = [
   [['orange', 'oranges', 'clementine', 'mandarine'], ['hiver'], 1],
 ];
 // Ce qui n'est pas un légume frais de saison (conserves, séchés, poudres…).
-const NOT_FRESH = /sechee|tomates? pelee|concentre|confite|poudre|jus de|zeste|pommes? de terre|ketchup/;
+const NOT_FRESH = /coulis|sechee|tomates? pelee|concentre|confite|poudre|jus de|zeste|pommes? de terre|ketchup/;
 
 const DISH = [
   [/potee|blanquette|tartiflette|parmentier|joue de boeuf|osso buco|langue de boeuf|tete de veau|confite|braise|veloute|soupe|gratin|fondue|raclette|vallee d'auge/, ['automne', 'hiver'], 2],

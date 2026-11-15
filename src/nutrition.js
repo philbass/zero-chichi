@@ -61,6 +61,7 @@ const FOODS = [
   [['pates fraiches'], 280, 11, 52, 3],
   [['nouilles chinoises'], 360, 11, 72, 2],
   [['crozets'], 350, 12, 70, 2, 400],
+  [['cannellonis', 'cannelloni'], 355, 12.5, 71, 1.8, 10], // un tube sec ≈ 10 g
   [['spaghetti', 'pates'], 355, 12.5, 71, 1.8],
   [['couscous'], 360, 12.5, 72, 1.8],
   [['farine d\'avoine'], 380, 13, 60, 7],
@@ -82,6 +83,7 @@ const FOODS = [
   [['celeri'], 15, 0.7, 2, 0.2, 40],
   [['champignons', 'cepes'], 25, 3, 2, 0.4, 20],
   [['chou rouge'], 30, 1.5, 5, 0.2, 900],
+  [['blettes'], 20, 2, 3, 0.2, 300], // une botte ≈ 300 g de vert
   [['chou frise', 'chou vert'], 30, 2, 4, 0.3, 1200],
   [['chou-fleur'], 25, 2, 3, 0.3, 700],
   [['courgette', 'courgettes'], 18, 1.3, 2.5, 0.3, 200],
@@ -101,7 +103,7 @@ const FOODS = [
   [['olives vertes'], 140, 1, 1, 14],
   [['gingembre'], 70, 1.5, 15, 0.7, 5],
   [['piment'], 40, 2, 7, 0.4, 15],
-  [['cive', 'cebette', 'ciboulette', 'persil', 'coriandre', 'basilic', 'aneth', 'cerfeuil'], 30, 3, 3, 0.6, 3],
+  [['cive', 'cebette', 'ciboulette', 'persil', 'coriandre', 'basilic', 'aneth', 'cerfeuil', 'menthe'], 30, 3, 3, 0.6, 3],
   // Matières grasses, sucres, sauces
   [['huile', 'graisse d\'oie', 'graisse de canard', 'saindoux'], 900, 0, 0, 100],
   [['sucre', 'miel'], 390, 0, 98, 0],
@@ -150,6 +152,7 @@ function grams(q, u, name, food) {
   const piece = food[5];
   if (!u) return piece ? q * piece : 0;
   if (u === 'c. à s.') return q * (SPOON_DRY.test(n) ? 10 : n.includes('huile') ? 13 : 15);
+  if (u === 'botte' && piece >= 100) return q * piece; // botte de légumes (blettes…), pas d'herbes
   if (u === 'tranches') return q * (n.includes('gingembre') ? 5 : piece || 100);
   if (u === 'boîte' || u === 'grosse boîte') return q * (UNIT_G[u] || piece || 400);
   const g = UNIT_G[u];
