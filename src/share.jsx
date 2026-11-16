@@ -72,12 +72,28 @@ const DISMISS = 'zc:installDismissed';
 const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 export const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
 
+/** Navigateur, pour adapter le guide d'installation. */
+export function installPlatform() {
+  const ua = navigator.userAgent;
+  if (isIOS()) {
+    if (/FBAN|FBAV|FB_IAB|Instagram|Snapchat|LinkedInApp|Twitter|Line\/|GSA\/|Pinterest|TikTok|musical_ly/i.test(ua)) return 'ios-inapp';
+    if (/CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua)) return 'ios-other';
+    return 'ios-safari';
+  }
+  return /android/i.test(ua) ? 'android' : 'other';
+}
+export const isIPad = () => /ipad/i.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+
+// Aperçu : bannière forcée et choix du téléphone simulé (jamais dans l'app publiée).
+export const INSTALL_PREVIEW = import.meta.env.VITE_INSTALL_PREVIEW === '1';
+
 /** État de la bannière d'installation : null (rien à proposer) ou { native, install(), dismiss() }. */
 export function useInstall() {
   const [, bump] = useState(0);
   const [dismissed, setDismissed] = useState(() => { try { return !!localStorage.getItem(DISMISS); } catch { return false; } });
   useEffect(() => { const f = () => bump(n => n + 1); subs.add(f); return () => subs.delete(f); }, []);
-  if (typeof window === 'undefined' || dismissed || isStandalone()) return null;
+  if (typeof window === 'undefined' || (!INSTALL_PREVIEW && (dismissed || isStandalone()))) return null;
+  if (INSTALL_PREVIEW) return { native: false, ios: true, dismiss: () => {}, install: async () => false, preview: true };
   if (document.documentElement.classList.contains('embed')) return null; // page Claude : pas d'installation
   if (!deferred && !matchMedia('(pointer: coarse)').matches) return null; // ordinateur sans proposition native
   const dismiss = () => { try { localStorage.setItem(DISMISS, '1'); } catch { /* stockage indisponible */ } setDismissed(true); };

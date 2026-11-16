@@ -3,7 +3,7 @@ import { BASE, norm, fmtT, meta, plural, ingList, illus, imgUrl, portionLabel, p
 import { useTimers, StepTimer, TimerPills } from './timers.jsx';
 import { useRecipeStore, getCapability } from './store.js';
 import { CATS as CORE_CATS, RECIPES } from './data.js';
-import { APP_URL, APP_URL_SHORT, recipeUrl, takeDeepLink, QRCode, shareLink, useInstall, recipeShareUrl, takeSharedCode, decodeSharedRecipe } from './share.jsx';
+import { APP_URL, APP_URL_SHORT, recipeUrl, takeDeepLink, QRCode, shareLink, useInstall, installPlatform, isIPad, INSTALL_PREVIEW, recipeShareUrl, takeSharedCode, decodeSharedRecipe } from './share.jsx';
 import RecipeEditor, { CatPicker } from './RecipeEditor.jsx';
 import { renderRecipeCard, cardFilename } from './shareCard.js';
 import { macros } from './nutrition.js';
@@ -296,7 +296,7 @@ export default function App() {
                 </div>
                 <button className="reset press" onClick={async () => { if (!(await install.install())) setSheet({ type: 'install' }); }}
                   style={{ flex: 'none', height: 38, padding: '0 14px', borderRadius: 999, background: 'var(--color-bg)', color: 'var(--color-accent-2-800)', fontFamily: 'var(--font-heading)', fontSize: 14 }}>
-                  {install.native ? 'Installer' : 'Comment ?'}
+                  Installer
                 </button>
                 <button className="icon-btn" onClick={install.dismiss} aria-label="Masquer" style={{ width: 36, height: 36, color: 'var(--color-bg)' }}><CloseIcon size={16} /></button>
               </div>
@@ -628,7 +628,7 @@ export default function App() {
         <NewCatSheet onClose={() => setSheet(null)} onAdd={async n => { const name = await addCat(n); if (name) setSheet(null); }} />
       )}
       {sheet?.type === 'app' && <AppShareSheet onClose={() => setSheet(null)} flash={flash} />}
-      {sheet?.type === 'install' && <InstallSheet onClose={() => setSheet(null)} />}
+      {sheet?.type === 'install' && <InstallGuide onClose={() => setSheet(null)} flash={flash} />}
       {sheet?.type === 'voice' && <VoiceSheet onClose={() => setSheet(null)} />}
       {sheet?.type === 'incoming' && (
         <IncomingSheet r={sheet.r}
@@ -1320,28 +1320,94 @@ function IncomingSheet({ r, existing, onAdd, onOpen, onClose }) {
   );
 }
 
-function InstallSheet({ onClose }) {
-  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
-  const steps = ios
-    ? [[<>Touche le bouton <b>Partager</b> <span style={{ display: 'inline-grid', verticalAlign: '-3px' }}><Icon d={SHARE} size={18} sw={2.5} /></span> de Safari, en bas de l'écran.</>],
-      [<>Fais défiler et choisis <b>Sur l'écran d'accueil</b>.</>],
-      [<>Touche <b>Ajouter</b> en haut à droite.</>]]
-    : [[<>Ouvre le menu du navigateur <b>⋮</b>, en haut à droite.</>],
-      [<>Choisis <b>Installer l'application</b> ou <b>Ajouter à l'écran d'accueil</b>.</>],
-      [<>Confirme avec <b>Installer</b>.</>]];
+const IOS_SHARE = ['M12 3v12', 'm8 7 4-4 4 4', 'M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1'];
+const IOS_ADD = ['M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z', 'M12 8v8M8 12h8'];
+const SIMS = [['ios-safari', 'iPhone · Safari'], ['ios-inapp', 'iPhone · WhatsApp, Insta…'], ['ios-other', 'iPhone · Chrome'], ['android', 'Android']];
+
+/* Guide d'installation : sur iPhone, une page web ne peut pas s'ajouter seule à l'écran d'accueil. */
+function InstallGuide({ onClose, flash }) {
+  const [sim, setSim] = useState(INSTALL_PREVIEW ? 'ios-safari' : null);
+  const platform = sim || installPlatform();
+  const ipad = !sim && isIPad();
+  const top = ipad || platform === 'ios-other'; // bouton Partager en haut (iPad, Chrome iPhone)
+  useEffect(() => {
+    const k = e => { if (e.key === 'Escape') onClose(); };
+    addEventListener('keydown', k); return () => removeEventListener('keydown', k);
+  }, [onClose]);
+  const copy = async () => { try { await navigator.clipboard.writeText(APP_URL); flash('Lien copié'); } catch { flash(APP_URL); } };
+
+  const mock = { display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 14, background: '#F2F2F7', color: '#1C1C1E', fontSize: 15, fontFamily: '-apple-system, system-ui, sans-serif' };
+  const Step = ({ n, children, visual }) => (
+    <li style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+      <div className="h" style={{ width: 30, height: 30, flex: 'none', borderRadius: '50%', background: 'var(--color-accent-2-200)', color: 'var(--color-accent-2-800)', display: 'grid', placeItems: 'center', fontSize: 14 }}>{n}</div>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 4 }}>
+        <div style={{ fontSize: 15.5, lineHeight: 1.4 }}>{children}</div>
+        {visual}
+      </div>
+    </li>
+  );
+  let title, intro, steps, note;
+  if (platform === 'ios-inapp') {
+    title = 'Ouvre d’abord Safari';
+    intro = 'Cette page est ouverte dans une autre app. L’ajout à l’écran d’accueil n’est possible que dans Safari.';
+    steps = [
+      <Step key={1} n={1} visual={<button className="btn btn-secondary" onClick={copy} style={{ alignSelf: 'flex-start', height: 40 }}>Copier le lien</button>}>Copie le lien de l'app.</Step>,
+      <Step key={2} n={2}>Ouvre <b>Safari</b> et colle le lien dans la barre d'adresse.</Step>,
+      <Step key={3} n={3}>Touche <b>Installer</b> sur la page qui s'ouvre, et laisse-toi guider.</Step>,
+    ];
+    note = <>Sinon, cherche dans le menu <b>•••</b> de cette app une option « Ouvrir dans Safari » ou « Ouvrir dans le navigateur ».</>;
+  } else if (platform.startsWith('ios')) {
+    title = 'Installer en 3 gestes';
+    intro = 'Sur iPhone, l’app s’ajoute depuis le menu Partager de ton navigateur.';
+    steps = [
+      <Step key={1} n={1}>
+        Touche le bouton <b>Partager</b> <span style={{ display: 'inline-grid', verticalAlign: '-5px', padding: 3, borderRadius: 8, background: '#F2F2F7', color: '#007AFF' }}><Icon d={IOS_SHARE} size={18} sw={2} /></span>, {top ? 'en haut de l’écran' : 'en bas de l’écran'}.
+      </Step>,
+      <Step key={2} n={2} visual={<div style={{ ...mock, justifyContent: 'space-between' }}><span>Sur l'écran d'accueil</span><Icon d={IOS_ADD} size={22} sw={1.8} /></div>}>
+        Fais défiler et choisis <b>Sur l'écran d'accueil</b>.
+      </Step>,
+      <Step key={3} n={3}>
+        Touche <b style={{ color: '#007AFF' }}>Ajouter</b>, en haut à droite. C'est fait !
+      </Step>,
+    ];
+    note = platform === 'ios-safari'
+      ? <>Pas de bouton Partager ? Touche d'abord <b>•••</b> à côté de l'adresse. Lien ouvert depuis WhatsApp ? Touche d'abord la <b>boussole</b> pour passer dans Safari.</>
+      : <>Pas de bouton Partager ? Ouvre plutôt la page dans <b>Safari</b>.</>;
+  } else {
+    title = 'Installer Zéro Chichi';
+    intro = 'Ton navigateur ne propose pas l’installation directe. Ça se fait en 3 gestes :';
+    steps = [
+      <Step key={1} n={1}>Ouvre le menu du navigateur <b>⋮</b>, en haut à droite.</Step>,
+      <Step key={2} n={2}>Choisis <b>Installer l'application</b> ou <b>Ajouter à l'écran d'accueil</b>.</Step>,
+      <Step key={3} n={3}>Confirme avec <b>Installer</b>.</Step>,
+    ];
+  }
+  const arrow = platform.startsWith('ios') && platform !== 'ios-inapp';
   return (
-    <Sheet title="Installer Zéro Chichi" onClose={onClose}>
-      <div className="muted" style={{ fontSize: 14, marginTop: -8 }}>L'icône apparaîtra sur ton écran d'accueil, et l'app marchera même sans connexion.</div>
-      <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {steps.map(([t], k) => (
-          <li key={k} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-            <div className="h" style={{ width: 32, height: 32, flex: 'none', borderRadius: '50%', background: 'var(--color-accent-2-200)', color: 'var(--color-accent-2-800)', display: 'grid', placeItems: 'center', fontSize: 15 }}>{k + 1}</div>
-            <div style={{ fontSize: 16, lineHeight: 1.45, paddingTop: 4 }}>{t}</div>
-          </li>
-        ))}
-      </ol>
-      <button className="btn btn-primary" onClick={onClose} style={{ height: 50, fontSize: 15 }}>C'est noté</button>
-    </Sheet>
+    <div onClick={onClose} style={{ position: 'absolute', inset: 0, zIndex: 60, background: 'color-mix(in srgb, var(--color-neutral-900) 55%, transparent)', display: 'flex', flexDirection: 'column', justifyContent: top ? 'flex-end' : 'flex-start', padding: 14, paddingTop: 'calc(14px + var(--status-h))', paddingBottom: 'calc(14px + var(--bottom-safe))', animation: 'screen-in .15s ease-out' }}>
+      {arrow && top && <div className="install-arrow up" aria-hidden="true" style={{ position: 'absolute', top: 'calc(6px + var(--status-h))', right: ipad ? 90 : 18 }}>↑</div>}
+      <div role="dialog" aria-modal="true" aria-label={title} onClick={e => e.stopPropagation()}
+        style={{ background: 'var(--color-bg)', borderRadius: 28, padding: '16px 16px 14px', display: 'flex', flexDirection: 'column', gap: 12, maxHeight: '86%', overflowY: 'auto', maxWidth: 520, width: '100%', alignSelf: 'center', boxShadow: 'var(--shadow-lg)' }}>
+        {INSTALL_PREVIEW && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: 8, borderRadius: 14, border: '1px dashed var(--color-neutral-500)' }}>
+            <span style={{ fontSize: 11.5, fontWeight: 700, width: '100%', color: 'var(--color-neutral-700)' }}>APERÇU · téléphone simulé (absent de l'app publiée)</span>
+            {SIMS.map(([k, l]) => <button key={k} className="reset" onClick={() => setSim(k)} style={{ fontSize: 12, fontWeight: 700, padding: '5px 9px', borderRadius: 999, background: sim === k ? 'var(--color-text)' : 'var(--color-surface)', color: sim === k ? 'var(--color-bg)' : 'var(--color-text)' }}>{l}</button>)}
+          </div>
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <img src={`${BASE}icon-192.png`} alt="" style={{ width: 40, height: 40, borderRadius: 10, flex: 'none' }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h2 className="h" style={{ fontSize: 21, margin: 0, lineHeight: 1.1 }}>{title}</h2>
+          </div>
+          <button className="icon-btn" onClick={onClose} aria-label="Fermer"><CloseIcon /></button>
+        </div>
+        <div className="muted" style={{ fontSize: 14, marginTop: -6 }}>{intro}</div>
+        <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>{steps}</ol>
+        {note && <div style={{ fontSize: 13, lineHeight: 1.45, padding: '10px 12px', borderRadius: 16, background: 'var(--color-accent-100)' }}>{note}</div>}
+        <button className="btn btn-primary" onClick={onClose} style={{ height: 48, fontSize: 15 }}>J'ai compris</button>
+      </div>
+      {arrow && !top && <div className="install-arrow" aria-hidden="true" style={{ alignSelf: 'center', marginTop: 'auto' }}>↓</div>}
+    </div>
   );
 }
 
