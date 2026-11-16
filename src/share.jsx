@@ -82,6 +82,8 @@ export function installPlatform() {
   }
   return /android/i.test(ua) ? 'android' : 'other';
 }
+/** Android : page ouverte dans le navigateur intégré d'une app (WebView « wv », WhatsApp, Instagram, Facebook…). */
+export const isAndroidInApp = () => /android/i.test(navigator.userAgent) && /; wv\)|WhatsApp|Instagram|FBAN|FBAV|FB_IAB|Snapchat|Line\/|TikTok|musical_ly/i.test(navigator.userAgent);
 export const isIPad = () => /ipad/i.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
 
 // Aperçu : bannière forcée et choix du téléphone simulé (jamais dans l'app publiée).
@@ -95,6 +97,8 @@ export function useInstall() {
   if (typeof window === 'undefined' || (!INSTALL_PREVIEW && (dismissed || isStandalone()))) return null;
   if (INSTALL_PREVIEW) return { native: false, ios: true, dismiss: () => {}, install: async () => false, preview: true };
   if (document.documentElement.classList.contains('embed')) return null; // page Claude : pas d'installation
+  // Android, lien ouvert dans une app (WhatsApp, Instagram, Facebook…) : pas d'installation possible ici.
+  if (!deferred && isAndroidInApp()) return { inapp: true, dismiss: () => { try { localStorage.setItem(DISMISS, '1'); } catch { /* stockage indisponible */ } setDismissed(true); } };
   // Sans installation directe du navigateur, on ne propose le guide que sur iPhone / iPad.
   if (!deferred && !isIOS()) return null;
   const dismiss = () => { try { localStorage.setItem(DISMISS, '1'); } catch { /* stockage indisponible */ } setDismissed(true); };

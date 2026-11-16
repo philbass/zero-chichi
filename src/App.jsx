@@ -288,7 +288,20 @@ export default function App() {
               </button>
             </div>
             <div className="muted" style={{ fontSize: 14, marginTop: wide ? -20 : -14 }}>Des recettes courtes. Rien de plus.</div>
-            {install && (
+            {install?.inapp && (
+              <div className="screen" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 6px 12px 18px', borderRadius: 24, background: 'var(--color-accent-2-700)', color: 'var(--color-bg)' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="h" style={{ fontSize: 16 }}>Ouvre dans Chrome pour installer l'app</div>
+                  <div style={{ fontSize: 12, color: 'var(--color-accent-2-200)', lineHeight: 1.35 }}>Menu ⋮ en haut à droite, puis « Ouvrir dans Chrome ». Ou copie le lien et colle-le dans Chrome.</div>
+                </div>
+                <button className="reset press" onClick={async () => { try { await navigator.clipboard.writeText(APP_URL); flash('Lien copié'); } catch { flash(APP_URL); } }}
+                  style={{ flex: 'none', height: 38, padding: '0 12px', borderRadius: 999, background: 'var(--color-bg)', color: 'var(--color-accent-2-800)', fontFamily: 'var(--font-heading)', fontSize: 13.5 }}>
+                  Copier le lien
+                </button>
+                <button className="icon-btn" onClick={install.dismiss} aria-label="Masquer" style={{ width: 36, height: 36, color: 'var(--color-bg)' }}><CloseIcon size={16} /></button>
+              </div>
+            )}
+            {install && !install.inapp && (
               <div className="screen" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 6px 12px 18px', borderRadius: 24, background: 'var(--color-accent-2-700)', color: 'var(--color-bg)' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="h" style={{ fontSize: 16 }}>Installe l'app</div>
