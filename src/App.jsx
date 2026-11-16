@@ -75,6 +75,18 @@ function useTablet() {
 const SHARED = takeSharedCode(); // recette perso reçue (#partage=…)
 const DEEP = (() => { const id = takeDeepLink(); return RECIPES.find(r => r.id === id) || null; })();
 
+/* Nouvelles recettes depuis la dernière visite : comparées à la liste vue au lancement précédent. */
+const SEEN = 'zc:seenRecipes';
+const NEW_AT_LAUNCH = (() => {
+  try {
+    const raw = localStorage.getItem(SEEN);
+    if (!raw) { localStorage.setItem(SEEN, JSON.stringify(RECIPES.map(r => r.id))); return []; } // première visite : rien de « nouveau »
+    const seen = new Set(JSON.parse(raw));
+    return RECIPES.filter(r => !seen.has(r.id)).map(r => r.id);
+  } catch { return []; }
+})();
+const markRecipesSeen = () => { try { localStorage.setItem(SEEN, JSON.stringify(RECIPES.map(r => r.id))); } catch { /* stockage indisponible */ } };
+
 /* ── application ─────────────────────────────────────────── */
 export default function App() {
   const tablet = useTablet();
@@ -85,6 +97,18 @@ export default function App() {
   const byId = id => recipes.find(r => r.id === id);
   const [sheet, setSheet] = useState(null); // { type: 'cats' | 'share', id }
   const [stack, setStack] = useState(() => (DEEP ? [{ s: 'home' }, { s: 'recipe', id: DEEP.id }] : [{ s: 'home' }]));
+  /* Pastille « N nouvelles » : visible au lancement, retirée dès qu'on navigue. */
+  const [newIds, setNewIds] = useState(NEW_AT_LAUNCH);
+  const firstStack = useRef(stack);
+  useEffect(() => {
+    if (!newIds.length) return;
+    if (stack !== firstStack.current) { setNewIds([]); markRecipesSeen(); }
+  }, [stack]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const h = () => { if (document.visibilityState === 'hidden') markRecipesSeen(); };
+    document.addEventListener('visibilitychange', h);
+    return () => document.removeEventListener('visibilitychange', h);
+  }, []);
   const [favs, setFavs] = useState(() => load('favs', []));
   const [courses, setCourses] = useState(() => load('courses', []));
   const [q, setQ] = useState('');
@@ -366,12 +390,21 @@ export default function App() {
             </section>
 
             <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <h2 className="h" style={{ fontSize: 20, margin: 0 }}>Dernières recettes</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <h2 className="h" style={{ fontSize: 20, margin: 0 }}>Dernières recettes</h2>
+                {newIds.length > 0 && (
+                  <span className="count-pop-in" style={{ flex: 'none', padding: '3px 10px', borderRadius: 999, background: 'var(--color-accent)', fontSize: 12, fontWeight: 700 }}>
+                    {newIds.length > 1 ? newIds.length + ' nouvelles' : '1 nouvelle'}
+                  </span>
+                )}
+              </div>
               <div className={wide ? 'cascade' : 'hscroll cascade'} style={wide ? { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 18 } : { gap: 12, paddingBottom: 4 }}>
                 {latest.map(r => (
                   <button key={r.id} className="reset press" onClick={e => openRecipe(r, e)}
                     style={{ flex: 'none', width: wide ? 'auto' : 180, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div data-thumb className="illus" style={{ position: 'relative', width: '100%', height: wide ? 170 : 150, borderRadius: 28, background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 16 }}><SeasonBadge r={r} /></div>
+                    <div data-thumb className="illus" style={{ position: 'relative', width: '100%', height: wide ? 170 : 150, borderRadius: 28, background: illus(r, 'accent-2'), backgroundOrigin: 'content-box', padding: 16 }}><SeasonBadge r={r} />
+                      {newIds.includes(r.id) && <span style={{ position: 'absolute', top: 10, right: 10, padding: '4px 10px', borderRadius: 999, background: 'var(--color-accent)', fontSize: 11.5, fontWeight: 700, boxShadow: 'var(--shadow-md)' }}>Nouveau</span>}
+                    </div>
                     <div className="h" style={{ fontSize: 16, lineHeight: 1.2 }}>{r.name}</div>
                     <div className="muted" style={{ fontSize: 12, marginTop: -6 }}>{meta(r)}</div>
                   </button>
