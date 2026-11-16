@@ -114,7 +114,62 @@ export function parseRecipeText(text) {
     if (mode === 'ing') { if (l.length < 90 && !/:$/.test(l)) { const x = parseIngredient(l); if (x) ing.push(x); } }
     else if (mode === 'steps') { if (l.length > 3 && !/:$/.test(l)) steps.push(l); }
   }
-  return { name, cats: [], t: t || 30, p, ing, steps, notes: ['Mise en forme simple : vérifie les quantités et raccourcis les étapes si besoin.'] };
+  // Pas de titres « Ingrédients » / « Préparation » : lignes courtes = ingrédients, phrases = étapes.
+  if (!ing.length && !steps.length) {
+    for (const raw of lines.slice(1)) {
+      const l = cleanLine(raw);
+      if (!l || /:$/.test(l)) continue;
+      const looksIng = l.length < 60 && !/[.!]$/.test(l) && (/^\d/.test(l) || l.split(' ').length <= 6);
+      if (looksIng && !steps.length) { const x = parseIngredient(l); if (x) ing.push(x); }
+      else steps.push(...splitSteps(l));
+    }
+  }
+  return { name, cats: [], t: t || 30, p, ing, steps: steps.flatMap(splitSteps), notes: ['Mise en forme simple : vérifie les quantités et raccourcis les étapes si besoin.'] };
+}
+
+/** Découpe un paragraphe en étapes (une phrase ou deux par étape). Une étape courte reste telle quelle. */
+export function splitSteps(text) {
+  const t = String(text).replace(/^\s*(?:\d+\s*[.)-]|[-•*])\s*/, '').trim();
+  if (!t) return [];
+  const sentences = (t.match(/[^.!?]+(?:[.!?]+|$)/g) || [t]).map(x => x.trim()).filter(Boolean);
+  if (sentences.length <= 2 && t.length < 160) return [t];
+  const out = [];
+  for (const x of sentences) {
+    const prev = out[out.length - 1];
+    if (prev && (prev.length < 30 || x.length < 12) && prev.length + x.length < 110) out[out.length - 1] += ' ' + x;
+    else out.push(x);
+  }
+  return out;
+}
+
+/** Catégorie devinée d'après le titre et les ingrédients. */
+export function guessCats(name, ingText, cats) {
+  const n = norm(name), all = norm(name + ' ' + ingText);
+  const has = c => cats.includes(c);
+  const pick = [];
+  const add = c => { if (has(c) && !pick.includes(c)) pick.push(c); };
+  if (/\b(pain|miche|baguette|brioche|fougasse)\b/.test(n)) add('Pain');
+  else if (/\bcake\b/.test(n)) add('Cakes');
+  else if (/\b(sauce|vinaigrette|mayonnaise|pesto|coulis)\b/.test(n)) add('Sauces');
+  else if (/\b(quiche|tarte salee|tarte aux? (poireaux|oignons?|tomates?|legumes)|pizza|tourte)\b/.test(n)) add('Tartes salées');
+  else if (/\b(gateau|tarte|crumble|mousse|cookies?|biscuits?|crepes?|fondant|clafoutis|creme|financiers?|compote|flan|tiramisu|muffins?)\b/.test(n) || /\b(chocolat|sucre glace)\b/.test(all) && !/\b(poulet|boeuf|porc|veau)\b/.test(all)) add('Desserts');
+  else if (/\b(pates|spaghetti|tagliatelles|penne|lasagnes?|cannellonis?|crozets|gnocchis?|risotto|macaroni)\b/.test(all) && /\b(pates|spaghetti|tagliatelles|penne|lasagnes?|cannellonis?|crozets|gnocchis?|macaroni|risotto)\b/.test(n)) add('Pâtes');
+  else if (/\b(soupe|veloute|salade|terrine|tartare|carpaccio|veloute)\b/.test(n)) add('Entrées');
+  else if (/\b(accras|tapenade|houmous|toasts?|verrines?|bouchees?)\b/.test(n)) add('Apéro');
+  if (!pick.length) {
+    if (/\b(poulet|boeuf|porc|veau|agneau|canard|dinde|lapin|saucisses?|jambon|lardons|joue|travers|echine|steak|cote)\b/.test(all)) { add('Plats'); add('Viandes'); }
+    else if (/\b(gratin|puree|poelee|legumes)\b/.test(n)) add('Accompagnement');
+    else add('Plats');
+  }
+  return pick;
+}
+
+/** Temps actif estimé : les durées écrites dans les étapes, plus 5 minutes par étape. */
+export function estimateTime(steps) {
+  let sec = 0;
+  for (const s of steps) { const d = parseDurations(s); if (d[0] && d[0].sec <= 4 * 3600) sec += d[0].sec; }
+  const m = Math.round(sec / 60) + 5 * steps.length;
+  return Math.max(10, Math.round(m / 5) * 5);
 }
 
 /* ── Consigne pour Claude ──────────────────────────────────────────── */
