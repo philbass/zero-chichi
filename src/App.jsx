@@ -21,6 +21,7 @@ const SLIDERS = ['M4 21v-7', 'M4 10V3', 'M12 21v-9', 'M12 8V3', 'M20 21v-5', 'M2
 const PLAY = 'M7 4.5v15l12-7.5z';
 const PAUSE = ['M7 4h3.5v16H7z', 'M13.5 4H17v16h-3.5z'];
 const STOP = 'M6 6h12v12H6z';
+const BULB = ['M9 18h6', 'M10 22h4', 'M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z'];
 const PENCIL = 'M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z';
 const ICONS = {
   home: ['m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z', 'M9 22V12h6v10'],
@@ -802,6 +803,15 @@ function RecipeView({ r, land, wide, onVoice, fav, portions, setPortions, onBack
           </li>
         ))}
       </ol>
+      {r.tip && (
+        <div style={{ margin: `20px ${px}px 0`, padding: '14px 16px', borderRadius: 22, background: 'var(--color-accent-100)', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+          <span style={{ width: 34, height: 34, flex: 'none', borderRadius: '50%', background: 'var(--color-accent)', display: 'grid', placeItems: 'center' }}><Icon d={BULB} size={18} sw={2.2} /></span>
+          <div style={{ minWidth: 0 }}>
+            <div className="h" style={{ fontSize: 17, marginBottom: 2 }}>Astuce</div>
+            <div style={{ fontSize: wide ? 17 : 15.5, lineHeight: 1.45, whiteSpace: 'pre-line' }}>{r.tip}</div>
+          </div>
+        </div>
+      )}
     </>
   );
   if (land) return (

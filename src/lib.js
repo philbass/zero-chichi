@@ -178,7 +178,7 @@ ${hasImage ? "La recette est sur l'image jointe" + (text.trim() ? ', complétée
 ${text.trim() ? '"""\n' + text.trim() + '\n"""' : ''}
 
 Réponds uniquement avec un objet JSON de cette forme :
-{"name": string, "cats": string[], "t": number, "wait": null | [number, string], "p": number, "yield": null | [string, string], "ing": [{"q": number | string | null, "u": string, "n": string}], "steps": string[], "notes": string[]}
+{"name": string, "cats": string[], "t": number, "wait": null | [number, string], "p": number, "yield": null | [string, string], "ing": [{"q": number | string | null, "u": string, "n": string}], "steps": string[], "tip": string | null, "notes": string[]}
 
 Règles :
 - name : nom court et naturel, sans emoji, majuscule seulement au début et aux noms propres.
@@ -188,6 +188,7 @@ Règles :
 - p : nombre de personnes. S'il n'est pas donné, estime-le. Si la recette donne des pièces (biscuits, bouchons, pâtés…) ou un moule, mets ce nombre dans p et le mot dans yield, au singulier puis au pluriel, par exemple ["bouchon", "bouchons"] ; sinon yield vaut null.
 - ing : un ingrédient par entrée, dans l'ordre de la recette. q est un nombre quand la quantité peut être multipliée (0.5 pour ½), "" pour « sel, poivre » ou « au goût », null pour « quelques », « un peu », « facultatif ». u est l'unité abrégée : g, kg, ml, cl, L, c. à s., c. à c., pincée, gousses, sachet, boîte… ou "" sans unité. n est le nom en minuscules, sans « de » au début, avec une précision courte entre parenthèses si utile (« (option) », « (pâte) »).
 - steps : 3 à 8 étapes, à l'impératif et au tutoiement (« Préchauffe », « Mélange »), une phrase courte chacune, 110 caractères maximum. Garde tous les temps, températures et réglages d'appareil. Supprime les emojis, hashtags et phrases publicitaires.
+- tip : une astuce courte (variante, conseil de service, alternative de cuisson) si la recette en donne une, au tutoiement ; null sinon. Ne la répète pas dans les étapes.
 - notes : en français, ce que tu as dû deviner ou corriger (portions, temps, incohérences). Tableau vide si rien.`;
 
 /* Contrôle et normalise la réponse de Claude. */
@@ -207,9 +208,11 @@ export function normalizeRecipe(x, cats) {
     }).filter(i => i[2]),
     steps: (Array.isArray(x?.steps) ? x.steps : []).map(s => String(s).trim()).filter(Boolean),
     notes: (Array.isArray(x?.notes) ? x.notes : []).map(String),
+    tip: typeof x?.tip === 'string' && x.tip.trim() ? x.tip.trim().slice(0, 400) : null,
   };
   if (!r.yield) delete r.yield;
   if (!r.wait) delete r.wait;
+  if (!r.tip) delete r.tip;
   return r;
 }
 

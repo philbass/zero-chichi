@@ -54,10 +54,13 @@ export async function renderRecipeCard(r, portions) {
   m.font = `400 33px ${B_FONT}`;
   const ingRows = ing.map(i => wrap(m, i.n, inner - 230));
   const stepRows = steps.map(s => wrap(m, s, inner - 90));
+  const tipRows = r.tip ? wrap(m, r.tip.replace(/\s*\n\s*/g, ' '), inner - 64) : [];
+  const tipH = tipRows.length ? 40 + 60 + tipRows.length * 46 + 36 : 0;
   const heroH = illu ? 470 : 0;
   let h = PAD + heroH + (illu ? 56 : 0) + titleLines.length * 84 + 24 + 64 + 70 // titre + pastilles
     + 70 + ingRows.reduce((a, l) => a + l.length * 44 + 26, 0)
     + 80 + stepRows.reduce((a, l) => a + Math.max(64, l.length * 46) + 22, 0)
+    + tipH
     + 330; // pied de page avec QR code
 
   const cv = document.createElement('canvas');
@@ -111,6 +114,17 @@ export async function renderRecipeCard(r, portions) {
     stepRows[k].forEach((l, j) => ctx.fillText(l, PAD + 90, y + 46 + j * 46));
     y += Math.max(64, stepRows[k].length * 46) + 22;
   });
+
+  // Astuce.
+  if (tipRows.length) {
+    y += 40;
+    const boxH = 60 + tipRows.length * 46 + 36 - 20;
+    ctx.fillStyle = C.peach; roundRect(ctx, PAD, y, inner, boxH, 36); ctx.fill();
+    ctx.fillStyle = C.text; ctx.font = `400 36px ${H_FONT}`; ctx.fillText('Astuce', PAD + 32, y + 56);
+    ctx.font = `400 33px ${B_FONT}`;
+    tipRows.forEach((l, j) => ctx.fillText(l, PAD + 32, y + 106 + j * 46));
+    y += boxH;
+  }
 
   // Pied de page : signature et QR code (lien direct vers la recette, ou vers l'app pour une recette perso).
   const QR = 210, top = cv.height - PAD - QR;

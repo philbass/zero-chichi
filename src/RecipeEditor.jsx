@@ -16,6 +16,7 @@ const toForm = r => ({
   ing: (r.ing || []).map(ingredientToLine).join('\n'),
   steps: (r.steps || []).join('\n'),
   notes: r.notes || [],
+  tip: r.tip || '',
 });
 
 const singular = w => w.replace(/(x|s)$/i, '');
@@ -150,7 +151,7 @@ export default function RecipeEditor({ initial, cats, onAddCat, onSave, onDelete
     const finalCats = shownCats.length ? shownCats : ['Plats'];
     const unit = form.unit.trim();
     const w = parseInt(form.wait, 10);
-    const fields = { name: form.name.trim(), cats: finalCats, t: t > 0 ? t : autoT, wait: w > 0 ? [w, form.waitType] : null, p: p > 0 ? p : 4, ing, steps: cleanSteps };
+    const fields = { name: form.name.trim(), cats: finalCats, t: t > 0 ? t : autoT, wait: w > 0 ? [w, form.waitType] : null, p: p > 0 ? p : 4, ing, steps: cleanSteps, tip: form.tip.trim() || null };
     if (unit && !/^pers/i.test(unit)) fields.yield = [singular(unit), unit];
     setSaving(true);
     const ok = await onSave(fields, image.mode === 'new' ? { blob: image.blob } : image.mode === 'remove' ? { remove: true } : null);
@@ -278,8 +279,15 @@ export default function RecipeEditor({ initial, cats, onAddCat, onSave, onDelete
           </div>
         ))}
         <button className="reset press" onClick={() => addStep()} style={dashed}>+ Ajouter une étape</button>
-        <div className="muted" style={{ fontSize: 12 }}>Astuce : la touche « Entrée » crée aussi une nouvelle étape.</div>
+        <div className="muted" style={{ fontSize: 12 }}>La touche « Entrée » crée aussi une nouvelle étape.</div>
       </div>
+
+      {/* Astuce */}
+      <label style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <span style={hdr}>Astuce <span style={small}>facultatif</span></span>
+        <textarea id="recipe-tip" value={form.tip} onChange={e => set('tip', e.target.value)} rows={2}
+          placeholder="Une précision, une variante, un conseil de service…" style={area} />
+      </label>
 
       {/* Plus de détails */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

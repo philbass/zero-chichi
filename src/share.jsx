@@ -132,6 +132,7 @@ export async function recipeShareUrl(r) {
   const data = { v: 1, n: r.name, c: r.cats, t: r.t, p: r.p, i: r.ing, s: r.steps };
   if (r.wait) data.w = r.wait;
   if (r.yield) data.y = r.yield;
+  if (r.tip) data.a = r.tip;
   if (r.img && !r.imgAsset && !r.imgData) data.im = r.img;
   const raw = new TextEncoder().encode(JSON.stringify(data));
   let code;
@@ -169,6 +170,7 @@ export async function decodeSharedRecipe(code) {
     };
     if (Array.isArray(d.w) && +d.w[0] > 0) r.wait = [Math.round(+d.w[0]), str(d.w[1], 30) || 'de repos'];
     if (Array.isArray(d.y) && d.y.length === 2) r.yield = d.y.map(x => str(x, 20));
+    if (typeof d.a === 'string' && d.a.trim()) r.tip = str(d.a, 600).trim();
     if (typeof d.im === 'string' && /^[a-z0-9-]+\.webp$/.test(d.im)) r.img = d.im;
     return r;
   } catch { return null; }
