@@ -1322,7 +1322,7 @@ function IncomingSheet({ r, existing, onAdd, onOpen, onClose }) {
 
 const IOS_SHARE = ['M12 3v12', 'm8 7 4-4 4 4', 'M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1'];
 const IOS_ADD = ['M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z', 'M12 8v8M8 12h8'];
-const SIMS = [['ios-safari', 'iPhone · Safari'], ['ios-inapp', 'iPhone · WhatsApp, Insta…'], ['ios-other', 'iPhone · Chrome'], ['android', 'Android']];
+const SIMS = [['ios-safari', 'iPhone · Safari'], ['ios-inapp', 'iPhone · WhatsApp, Insta…'], ['ios-other', 'iPhone · Chrome']];
 
 /* Guide d'installation : sur iPhone, une page web ne peut pas s'ajouter seule à l'écran d'accueil. */
 function InstallGuide({ onClose, flash }) {
@@ -1356,7 +1356,7 @@ function InstallGuide({ onClose, flash }) {
       <Step key={3} n={3}>Touche <b>Installer</b> sur la page qui s'ouvre, et laisse-toi guider.</Step>,
     ];
     note = <>Sinon, cherche dans le menu <b>•••</b> de cette app une option « Ouvrir dans Safari » ou « Ouvrir dans le navigateur ».</>;
-  } else if (platform.startsWith('ios')) {
+  } else {
     title = 'Installer en 3 gestes';
     intro = 'Sur iPhone, l’app s’ajoute depuis le menu Partager de ton navigateur.';
     steps = [
@@ -1373,14 +1373,6 @@ function InstallGuide({ onClose, flash }) {
     note = platform === 'ios-safari'
       ? <>Pas de bouton Partager ? Touche d'abord <b>•••</b> à côté de l'adresse. Lien ouvert depuis WhatsApp ? Touche d'abord la <b>boussole</b> pour passer dans Safari.</>
       : <>Pas de bouton Partager ? Ouvre plutôt la page dans <b>Safari</b>.</>;
-  } else {
-    title = 'Installer Zéro Chichi';
-    intro = 'Ton navigateur ne propose pas l’installation directe. Ça se fait en 3 gestes :';
-    steps = [
-      <Step key={1} n={1}>Ouvre le menu du navigateur <b>⋮</b>, en haut à droite.</Step>,
-      <Step key={2} n={2}>Choisis <b>Installer l'application</b> ou <b>Ajouter à l'écran d'accueil</b>.</Step>,
-      <Step key={3} n={3}>Confirme avec <b>Installer</b>.</Step>,
-    ];
   }
   const arrow = platform.startsWith('ios') && platform !== 'ios-inapp';
   return (

@@ -95,7 +95,8 @@ export function useInstall() {
   if (typeof window === 'undefined' || (!INSTALL_PREVIEW && (dismissed || isStandalone()))) return null;
   if (INSTALL_PREVIEW) return { native: false, ios: true, dismiss: () => {}, install: async () => false, preview: true };
   if (document.documentElement.classList.contains('embed')) return null; // page Claude : pas d'installation
-  if (!deferred && !matchMedia('(pointer: coarse)').matches) return null; // ordinateur sans proposition native
+  // Sans installation directe du navigateur, on ne propose le guide que sur iPhone / iPad.
+  if (!deferred && !isIOS()) return null;
   const dismiss = () => { try { localStorage.setItem(DISMISS, '1'); } catch { /* stockage indisponible */ } setDismissed(true); };
   return {
     native: !!deferred,
