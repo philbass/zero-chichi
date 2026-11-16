@@ -7,7 +7,7 @@ import { norm } from './lib.js';
 const FOODS = [
   // À ne pas compter (eau, sel, épices en très petite quantité)
   [['eau'], 0, 0, 0, 0],
-  [['gros sel', 'sel', 'poivre', 'muscade', '4-epices', 'quatre-epices', 'bois d\'inde', 'clous de girofle', 'laurier', 'thym', 'herbes de provence', 'bouquet garni', 'sauge', 'estragon', 'cannelle', 'paprika', 'extrait de vanille', 'levure chimique', 'levure', 'tabasco', 'fleur de sel', 'aromates', 'romarin', 'origan', 'poudre de colombo', 'colombo', 'massale'], 0, 0, 0, 0],
+  [['gros sel', 'sel', 'poivre', 'muscade', '4-epices', 'quatre-epices', 'bois d\'inde', 'clous de girofle', 'laurier', 'thym', 'herbes de provence', 'bouquet garni', 'sauge', 'estragon', 'cannelle', 'paprika', 'extrait de vanille', 'levure chimique', 'levure', 'tabasco', 'fleur de sel', 'aromates', 'romarin', 'origan', 'poudre de colombo', 'colombo', 'massale', 'sciure'], 0, 0, 0, 0],
   // Viandes et poissons
   [['ailerons de poulet'], 150, 12, 0, 11, 45], // poids avec os
   [['cuisses de poulet'], 150, 14, 0, 10, 250], // poids avec os
@@ -34,7 +34,7 @@ const FOODS = [
   [['thon au naturel', 'thon'], 115, 26, 0, 1, 140], // une boîte ≈ 140 g égoutté
   [['sardines a l\'huile', 'sardines'], 210, 24, 0, 13, 115], // une boîte ≈ 115 g égouttée
   [['saumon fume'], 180, 22, 0, 10],
-  [['saumon'], 200, 20, 0, 13],
+  [['saumon'], 200, 20, 0, 13, 1000], // un filet entier ≈ 1 kg
   [['morue salee'], 160, 34, 0, 1.5],
   // Œufs et produits laitiers
   [['jaunes d\'oeuf', 'jaune d\'oeuf', 'jaunes d\'oeufs'], 340, 16, 0.5, 30, 18],
