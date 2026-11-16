@@ -141,7 +141,7 @@ export function recipeScript(r, portions) {
     const lead = r.steps.length > 1 && i === r.steps.length - 1 ? 'Et pour finir,' : NEXT[i % NEXT.length];
     out.push(lead + ' ' + lowerFirst(speakable(s)));
   });
-  if (r.tip) out.push('Une astuce : ' + lowerFirst(speakable(r.tip)));
+  if (r.tip) out.push('Une astuce : ' + lowerFirst(speakable(r.tip.replace(/\[\[[^\]|]+\|([^\]]+)\]\]/g, '$1'))));
   out.push('Et voilà ! Bon appétit.');
   return out;
 }

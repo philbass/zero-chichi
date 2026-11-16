@@ -532,7 +532,8 @@ export default function App() {
             onBack={back} onFav={() => toggleFav(recipe.id)}
             onShare={() => setSheet({ type: 'share', id: recipe.id })}
             onCats={() => setSheet({ type: 'cats', id: recipe.id })}
-            onEdit={() => go({ s: 'edit', id: recipe.id })} />
+            onEdit={() => go({ s: 'edit', id: recipe.id })}
+            onOpenId={id => { const x = byId(id); if (x) go({ s: 'recipe', id }); }} />
         )}
 
         {/* ── Nouvelle recette / modification ── */}
@@ -732,7 +733,7 @@ function ChipRow({ label, options, value, onChange, render }) {
   );
 }
 
-function RecipeView({ r, land, wide, onVoice, fav, portions, setPortions, onBack, onFav, onShare, onCats, onEdit }) {
+function RecipeView({ r, land, wide, onVoice, fav, portions, setPortions, onBack, onFav, onShare, onCats, onEdit, onOpenId }) {
   const ing = ingList(r, portions);
   const px = land ? 0 : wide ? 40 : 22;
   const hero = (
@@ -809,7 +810,18 @@ function RecipeView({ r, land, wide, onVoice, fav, portions, setPortions, onBack
           <div style={{ minWidth: 0 }}>
             <div className="h" style={{ fontSize: 17, marginBottom: 2 }}>Astuce</div>
             <div style={{ fontSize: wide ? 17 : 15.5, lineHeight: 1.45, display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {r.tip.split(/\n+/).filter(t => t.trim()).map((t, k) => <p key={k} style={{ margin: 0 }}>{t}</p>)}
+              {r.tip.split(/\n+/).filter(t => t.trim()).map((t, k) => <p key={k} style={{ margin: 0 }}><TipText text={t} onOpenId={onOpenId} /></p>)}
+              {TIP_LINK_CARD && [...r.tip.matchAll(/\[\[([^\]|]+)\|[^\]]+\]\]/g)].map(m => RECIPES.find(x => x.id === m[1])).filter(Boolean).map(x => (
+                <button key={x.id} className="reset press" onClick={() => onOpenId?.(x.id)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8, borderRadius: 18, background: 'var(--color-bg)', marginTop: 4 }}>
+                  <span style={{ width: 52, height: 52, flex: 'none', borderRadius: 14, background: illus(x, 'accent-2'), backgroundOrigin: 'content-box', padding: 4 }} />
+                  <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                    <span className="h" style={{ fontSize: 15.5 }}>{x.name}</span>
+                    <span className="muted" style={{ fontSize: 12 }}>{meta(x)}</span>
+                  </span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -879,6 +891,24 @@ function SeasonTag({ r }) {
       <Icon d={SEASON_ICON[ss[0]]} size={12} sw={2.4} />{ss.map(x => SEASON_LABEL[x]).join(' · ')}{ss.includes(currentSeason()) ? ' · de saison' : ''}
     </span>
   );
+}
+
+/* Astuce : « [[id|texte]] » devient un lien vers une autre recette de l'app. */
+const TIP_LINK_CARD = typeof localStorage !== 'undefined' && localStorage.getItem('zc:tipcard') === '1'; // maquette
+function TipText({ text, onOpenId }) {
+  if (TIP_LINK_CARD) return text.replace(/\[\[[^\]|]+\|([^\]]+)\]\]/g, '$1');
+  const parts = text.split(/(\[\[[^\]|]+\|[^\]]+\]\])/);
+  return parts.map((p, k) => {
+    const m = p.match(/^\[\[([^\]|]+)\|([^\]]+)\]\]$/);
+    if (!m) return p;
+    return (
+      <button key={k} className="reset" onClick={() => onOpenId?.(m[1])}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 700, color: 'var(--color-accent-800, #7A4A00)', textDecoration: 'underline', textUnderlineOffset: 3, cursor: 'pointer' }}>
+        {m[2]}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+      </button>
+    );
+  });
 }
 
 /* ── Lecture à voix haute ─────────────────────────────── */

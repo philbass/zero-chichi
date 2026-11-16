@@ -54,7 +54,7 @@ export async function renderRecipeCard(r, portions) {
   m.font = `400 33px ${B_FONT}`;
   const ingRows = ing.map(i => wrap(m, i.n, inner - 230));
   const stepRows = steps.map(s => wrap(m, s, inner - 90));
-  const tipRows = r.tip ? r.tip.split(/\n+/).filter(t => t.trim()).flatMap(t => wrap(m, t.trim(), inner - 64)) : [];
+  const tipRows = r.tip ? r.tip.replace(/\[\[[^\]|]+\|([^\]]+)\]\]/g, '$1').split(/\n+/).filter(t => t.trim()).flatMap(t => wrap(m, t.trim(), inner - 64)) : [];
   const tipH = tipRows.length ? 40 + 60 + tipRows.length * 46 + 36 : 0;
   const heroH = illu ? 470 : 0;
   let h = PAD + heroH + (illu ? 56 : 0) + titleLines.length * 84 + 24 + 64 + 70 // titre + pastilles
