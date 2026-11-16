@@ -154,6 +154,8 @@ export function guessCats(name, ingText, cats) {
   else if (/\b(quiche|tarte salee|tarte aux? (poireaux|oignons?|tomates?|legumes)|pizza|tourte)\b/.test(n)) add('Tartes salées');
   else if (/\b(gateau|tarte|crumble|mousse|cookies?|biscuits?|crepes?|fondant|clafoutis|creme|financiers?|compote|flan|tiramisu|muffins?)\b/.test(n) || /\b(chocolat|sucre glace)\b/.test(all) && !/\b(poulet|boeuf|porc|veau)\b/.test(all)) add('Desserts');
   else if (/\b(pates|spaghetti|tagliatelles|penne|lasagnes?|cannellonis?|crozets|gnocchis?|risotto|macaroni)\b/.test(all) && /\b(pates|spaghetti|tagliatelles|penne|lasagnes?|cannellonis?|crozets|gnocchis?|macaroni|risotto)\b/.test(n)) add('Pâtes');
+  else if (/\b(soupe|veloute|potage|bouillon|ramen|pho)\b/.test(n) && has('Soupe')) add('Soupe');
+  else if (/\b(nouilles|ramen|udon|soba)\b/.test(n) && has('Nouilles')) add('Nouilles');
   else if (/\b(soupe|veloute|salade|terrine|tartare|carpaccio|veloute)\b/.test(n)) add('Entrées');
   else if (/\b(accras|tapenade|houmous|toasts?|verrines?|bouchees?)\b/.test(n)) add('Apéro');
   if (!pick.length) {
