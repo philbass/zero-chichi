@@ -1,5 +1,5 @@
 // Zéro Chichi hors ligne : tout est enregistré à l'installation, puis le réseau sert les mises à jour.
-const CACHE = 'zero-chichi-v4';
+const CACHE = 'zero-chichi-v5';
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
     const c = await caches.open(CACHE);

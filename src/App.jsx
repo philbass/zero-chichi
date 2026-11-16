@@ -11,6 +11,7 @@ import { macros } from './nutrition.js';
 import { seasonsOf, currentSeason, SEASON_LABEL } from './season.js';
 import { canSpeak, speak, pauseSpeaking, resumeSpeaking, stopSpeaking, speakable, recipeScript, stepScript, useVoiceSettings, useVoices, getVoiceSettings, defaultVoiceURI, voiceRegion } from './speech.js';
 import { NEWS, NEWS_ICONS, latestNews, newsSeen, markNewsSeen, newsVisited, markNewsVisited } from './news.js';
+import { SeasonalLogo } from './seasonLogo.jsx';
 import { HeartButton, Confetti, Swipeable, flyDots, withHeroTransition, supportsHeroTransition } from './anim.jsx';
 
 const TINTS = ['accent', 'accent-2', 'neutral'];
@@ -309,7 +310,7 @@ export default function App() {
         {s === 'home' && (
           <div className="screen" style={{ padding: wide ? '28px 40px 40px' : '12px 22px 28px', display: 'flex', flexDirection: 'column', gap: wide ? 28 : 22 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-              <img src={`${BASE}assets/logo-zero-chichi.png`} alt="Zéro Chichi" style={{ height: 64, width: 'auto' }} />
+              <SeasonalLogo height={64} />
               <button className="reset press" onClick={() => setSheet({ type: 'app' })}
                 style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 6, height: 40, padding: '0 14px 0 12px', marginTop: 12, borderRadius: 999, background: 'var(--color-accent-2-100)', color: 'var(--color-accent-2-800)', fontSize: 13, fontWeight: 700 }}>
                 <Icon d={SHARE} size={16} sw={2.5} />Partager l'app

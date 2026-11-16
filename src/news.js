@@ -15,7 +15,7 @@ export const NEWS = [
         ],
       },
     ],
-    fixes: ['Nouvelle catégorie « Pain ».'],
+    fixes: ['Nouvelle catégorie « Pain ».', 'Le logo change de tenue avec les saisons : feuille morte, champignons, bonnet de Noël, neige, pâquerettes, parasol et ballon.'],
   },
   {
     id: '2026-11-15-lecture',
