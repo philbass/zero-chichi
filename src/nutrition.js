@@ -109,6 +109,7 @@ const FOODS = [
   [['sucre', 'miel'], 390, 0, 98, 0],
   [['chocolat noir'], 560, 7, 33, 42],
   [['amandes'], 610, 21, 6, 53],
+  [['cerneaux de noix', 'noix'], 650, 15, 7, 65],
   [['tahini'], 620, 18, 10, 55],
   [['pesto'], 500, 5, 6, 50],
   [['moutarde'], 150, 7, 4, 11],
@@ -146,7 +147,10 @@ function findFood(name) {
   return null;
 }
 
-function grams(q, u, name, food) {
+function grams(q0, u, name, food) {
+  // Fourchette « 2 à 3 » : on compte la moyenne.
+  const range = typeof q0 === 'string' && q0.match(/^(\d+(?:[.,]\d+)?)\s*(?:à|-)\s*(\d+(?:[.,]\d+)?)$/);
+  const q = range ? (parseFloat(range[1].replace(',', '.')) + parseFloat(range[2].replace(',', '.'))) / 2 : q0;
   if (typeof q !== 'number') return 0;
   const n = clean(name);
   const piece = food[5];
