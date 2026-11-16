@@ -32,6 +32,7 @@ const FOODS = [
   [['chorizo'], 450, 24, 2, 38],
   [['foie gras'], 460, 7, 4, 45, 650], // un lobe cru ≈ 600 à 700 g
   [['thon au naturel', 'thon'], 115, 26, 0, 1, 140], // une boîte ≈ 140 g égoutté
+  [['sardines a l\'huile', 'sardines'], 210, 24, 0, 13, 115], // une boîte ≈ 115 g égouttée
   [['saumon fume'], 180, 22, 0, 10],
   [['saumon'], 200, 20, 0, 13],
   [['morue salee'], 160, 34, 0, 1.5],
