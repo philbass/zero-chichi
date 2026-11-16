@@ -2,6 +2,22 @@
 // Les nouvelles recettes sont retrouvées automatiquement grâce à leur date d'ajout (champ `added`).
 export const NEWS = [
   {
+    id: '2026-11-16-saisie',
+    date: '2026-11-16',
+    title: 'Ajouter une recette, plus simple',
+    groups: [
+      {
+        name: 'Tes recettes',
+        items: [
+          { icon: 'pencil', title: 'Un écran plus simple', text: 'Une photo, un titre, les ingrédients et la préparation. Le reste est deviné par l\'app.', action: 'new' },
+          { icon: 'list', title: 'Une case par étape', text: 'Touche « + Ajouter une étape » ou la touche Entrée pour passer à la suivante.' },
+          { icon: 'clipboard', title: 'Coller une recette entière', text: 'Colle le texte d\'une recette trouvée ailleurs : les cases se remplissent toutes seules.' },
+        ],
+      },
+    ],
+    fixes: ['Nouvelle catégorie « Pain ».'],
+  },
+  {
     id: '2026-11-15-lecture',
     date: '2026-11-15',
     title: 'Les recettes à voix haute',
@@ -86,6 +102,9 @@ export const NEWS_ICONS = {
   calendar: ['M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z', 'M16 2v4M8 2v4M3 10h18'],
   speaker: ['M11 5 6 9H2v6h4l5 4z', 'M15.5 8.5a5 5 0 0 1 0 7', 'M19 5a10 10 0 0 1 0 14'],
   sliders: ['M4 21v-7', 'M4 10V3', 'M12 21v-9', 'M12 8V3', 'M20 21v-5', 'M20 12V3', 'M1 14h6', 'M9 8h6', 'M17 16h6'],
+  pencil: 'M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z',
+  list: ['M9 6h12M9 12h12M9 18h12', 'M4 6h.01M4 12h.01M4 18h.01'],
+  clipboard: ['M9 2h6v4H9z', 'M15 4h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h3'],
   sort: ['M3 6h13M3 12h9M3 18h5', 'M18 8v12m0 0-3-3m3 3 3-3'],
 };
 

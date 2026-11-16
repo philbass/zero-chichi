@@ -118,6 +118,11 @@ export default function RecipeEditor({ initial, cats, onAddCat, onSave, onDelete
   const format = async () => {
     setError('');
     if (!paste.text.trim() && !paste.photo) { setError('Colle le texte de la recette ou ajoute une photo.'); return; }
+    // Une adresse web seule : l'app ne peut pas aller lire un autre site.
+    if (!paste.photo && /^\s*(https?:\/\/|www\.)\S+\s*$/i.test(paste.text)) {
+      setError("Les adresses web ne peuvent pas être lues directement. Ouvre la recette dans ton navigateur, copie son texte (titre, ingrédients et étapes) et colle-le ici.");
+      return;
+    }
     setBusy(true);
     const sample = await getCapability('sample');
     if (!sample) {
