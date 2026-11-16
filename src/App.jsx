@@ -808,7 +808,9 @@ function RecipeView({ r, land, wide, onVoice, fav, portions, setPortions, onBack
           <span style={{ width: 34, height: 34, flex: 'none', borderRadius: '50%', background: 'var(--color-accent)', display: 'grid', placeItems: 'center' }}><Icon d={BULB} size={18} sw={2.2} /></span>
           <div style={{ minWidth: 0 }}>
             <div className="h" style={{ fontSize: 17, marginBottom: 2 }}>Astuce</div>
-            <div style={{ fontSize: wide ? 17 : 15.5, lineHeight: 1.45, whiteSpace: 'pre-line' }}>{r.tip}</div>
+            <div style={{ fontSize: wide ? 17 : 15.5, lineHeight: 1.45, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {r.tip.split(/\n+/).filter(t => t.trim()).map((t, k) => <p key={k} style={{ margin: 0 }}>{t}</p>)}
+            </div>
           </div>
         </div>
       )}
