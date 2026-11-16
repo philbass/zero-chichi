@@ -31,6 +31,7 @@ const FOODS = [
   [['des de jambon', 'jambon'], 115, 19, 1, 4],
   [['chorizo'], 450, 24, 2, 38],
   [['foie gras'], 460, 7, 4, 45, 650], // un lobe cru ≈ 600 à 700 g
+  [['thon au naturel', 'thon'], 115, 26, 0, 1, 140], // une boîte ≈ 140 g égoutté
   [['saumon fume'], 180, 22, 0, 10],
   [['saumon'], 200, 20, 0, 13],
   [['morue salee'], 160, 34, 0, 1.5],
@@ -44,6 +45,7 @@ const FOODS = [
   [['lait'], 47, 3.3, 4.8, 1.6],
   [['beurre'], 745, 0.7, 0.6, 82, 10],
   [['fromage blanc'], 75, 7.5, 4, 3],
+  [['fromage frais'], 260, 6, 3.5, 25],
   [['yaourt grec'], 120, 5, 4, 10, 150],
   [['parmesan'], 390, 33, 0, 28],
   [['comte', 'beaufort'], 410, 27, 0, 34],
