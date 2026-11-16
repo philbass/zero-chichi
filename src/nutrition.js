@@ -21,6 +21,7 @@ const FOODS = [
   [['langue de boeuf'], 220, 15, 0, 18],
   [['epigramme d\'agneau', 'agneau'], 250, 15, 0, 21], // poitrine, poids avec os
   [['tete de veau'], 150, 16, 0, 9.5, 3000], // une tête entière désossée ≈ 3 kg
+  [['viande hachee', 'steak hache'], 215, 18, 0, 15], // bœuf haché 15 %
   [['boeuf'], 130, 21, 0, 5], // bœuf maigre (tête de filet, rumsteck…)
   [['rouelle de porc'], 150, 21, 0, 7],
   [['poitrine de porc'], 260, 17, 0, 21],
@@ -61,6 +62,8 @@ const FOODS = [
   [['roquefort'], 360, 20, 0, 31],
   [['gorgonzola'], 350, 19, 0, 30],
   // Féculents, farines, pâtes
+  [['pates feuilletees'], 410, 6, 38, 25, 230], // avant « pâtes » : sinon elles comptent comme des pâtes sèches
+  [['pates brisees'], 420, 6, 45, 24, 230],
   [['pates fraiches'], 280, 11, 52, 3],
   [['nouilles chinoises'], 360, 11, 72, 2],
   [['crozets'], 350, 12, 70, 2, 400],
@@ -72,7 +75,7 @@ const FOODS = [
   [['chapelure'], 380, 12, 75, 3],
   [['pain', 'baguette'], 270, 9, 55, 1.5, 40], // une tranche de pain rond ≈ 40 g
   [['pate brisee'], 420, 6, 45, 24, 230],
-  [['pate feuilletee'], 410, 6, 38, 25, 230],
+  [['pate feuilletee', 'pates feuilletees'], 410, 6, 38, 25, 230],
   [['pommes de terre', 'grosses pommes de terre'], 80, 2, 17, 0.1, 150],
   [['pois chiches'], 120, 7, 16, 2.5, 265],
   [['lentilles'], 330, 24, 47, 1.5], // sèches
@@ -86,8 +89,9 @@ const FOODS = [
   [['celeri'], 15, 0.7, 2, 0.2, 40],
   [['champignons', 'cepes'], 25, 3, 2, 0.4, 20],
   [['chou rouge'], 30, 1.5, 5, 0.2, 900],
+  [['epinards'], 25, 3, 1.5, 0.4],
   [['blettes'], 20, 2, 3, 0.2, 300], // une botte ≈ 300 g de vert
-  [['chou frise', 'chou vert'], 30, 2, 4, 0.3, 1200],
+  [['chou frise', 'chou vert', 'choux verts'], 30, 2, 4, 0.3, 1200],
   [['chou-fleur'], 25, 2, 3, 0.3, 700],
   [['courgette', 'courgettes'], 18, 1.3, 2.5, 0.3, 200],
   [['aubergines'], 25, 1, 4, 0.2, 280],
@@ -109,7 +113,7 @@ const FOODS = [
   [['cive', 'cebette', 'ciboulette', 'persil', 'coriandre', 'basilic', 'aneth', 'cerfeuil', 'menthe'], 30, 3, 3, 0.6, 3],
   // Matières grasses, sucres, sauces
   [['huile', 'graisse d\'oie', 'graisse de canard', 'saindoux'], 900, 0, 0, 100],
-  [['sucre', 'miel'], 390, 0, 98, 0],
+  [['sucre', 'miel', 'cassonade'], 390, 0, 98, 0],
   [['chocolat noir'], 560, 7, 33, 42],
   [['amandes'], 610, 21, 6, 53],
   [['cerneaux de noix', 'noix'], 650, 15, 7, 65],
