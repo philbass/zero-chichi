@@ -309,3 +309,7 @@ html.tablet [role="dialog"] { max-width: 560px; margin: 0 auto; }
 .count-pop-in { animation: pop-in .35s cubic-bezier(.3,1.6,.5,1) both .2s; }
 @keyframes pop-in { from { transform: scale(.4); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .count-pop-in { animation: none; } }
+
+/* Tirer pour actualiser (iPhone). */
+.ptr-spin { animation: ptr-spin .8s linear infinite; }
+@keyframes ptr-spin { to { transform: rotate(360deg); } }

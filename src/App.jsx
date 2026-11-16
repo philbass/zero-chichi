@@ -3,6 +3,7 @@ import { BASE, norm, fmtT, meta, plural, ingList, illus, imgUrl, portionLabel, p
 import { useTimers, StepTimer, TimerPills } from './timers.jsx';
 import { useRecipeStore, getCapability } from './store.js';
 import { CATS as CORE_CATS, RECIPES } from './data.js';
+import { usePullToRefresh, PullIndicator } from './pull.jsx';
 import { APP_URL, APP_URL_SHORT, recipeUrl, takeDeepLink, QRCode, shareLink, useInstall, installPlatform, isIPad, INSTALL_PREVIEW, recipeShareUrl, takeSharedCode, decodeSharedRecipe } from './share.jsx';
 import RecipeEditor, { CatPicker } from './RecipeEditor.jsx';
 import { renderRecipeCard, cardFilename } from './shareCard.js';
@@ -283,6 +284,7 @@ export default function App() {
     listTitle = 'Catégories'; listSub = recipes.length + ' recettes';
   }
 
+  const ptr = usePullToRefresh(scrollRef, !sheet);
   const recipe = (s === 'recipe' || s === 'cook') ? byId(top.id) : null;
   const isRecipe = !!recipe;
   const isCook = s === 'cook';
@@ -301,7 +303,8 @@ export default function App() {
         <FakeStatus />
       </div>
 
-      <div className="scroll" ref={scrollRef} style={wide && !isRecipe && !isEditor ? { marginLeft: 104 } : undefined}>
+      <PullIndicator {...ptr} />
+      <div className="scroll" ref={scrollRef} style={{ ...(wide && !isRecipe && !isEditor ? { marginLeft: 104 } : null), ...(ptr.pull ? { transform: `translateY(${Math.round(ptr.pull * 0.5)}px)`, transition: ptr.refreshing ? 'transform .2s' : 'none' } : null) }}>
         {/* ── Accueil ── */}
         {s === 'home' && (
           <div className="screen" style={{ padding: wide ? '28px 40px 40px' : '12px 22px 28px', display: 'flex', flexDirection: 'column', gap: wide ? 28 : 22 }}>
