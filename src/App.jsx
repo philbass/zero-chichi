@@ -231,11 +231,15 @@ export default function App() {
   };
 
   /* ── données dérivées ── */
+  // Filtre des catégories : toutes les recettes, celles de l'app, ou mes recettes perso.
+  const [src, setSrc] = useState(() => load('catSrc', 'all'));
+  useEffect(() => save('catSrc', src), [src]);
+  const pool = useMemo(() => (src === 'app' ? recipes.filter(r => !r.custom) : src === 'mine' ? recipes.filter(r => r.custom) : recipes), [recipes, src]);
   const catTiles = useMemo(() => categories.map((c, i) => {
     const t = TINTS[i % 3];
-    const n = recipes.filter(r => r.cats.includes(c)).length;
+    const n = pool.filter(r => r.cats.includes(c)).length;
     return { name: c, n, countLabel: n ? plural(n, 'recette') : 'Vide', bg: `var(--color-${t}-200)`, fg: `var(--color-${t}-800)` };
-  }), [recipes, categories]);
+  }), [pool, categories]);
   // Tirage fait une fois par lancement de l'app : l'ordre reste stable pendant la visite.
   const [seed, setSeed] = useState(() => Math.random());
   const [rolling, setRolling] = useState(0);
@@ -273,16 +277,17 @@ export default function App() {
     searchInfo = browse ? 'Ou parcours par catégorie' : plural(res.length, 'résultat');
     emptyTitle = 'Rien trouvé'; emptyText = 'Essaie un autre mot ou retire un filtre.';
   } else if (s === 'list') {
-    rows = byNewest.filter(r => r.cats.includes(top.cat)); // les plus récentes d'abord
+    rows = byNewest.filter(r => r.cats.includes(top.cat) && pool.includes(r)); // les plus récentes d'abord
     listTitle = top.cat; listSub = plural(rows.length, 'recette');
-    emptyTitle = 'Catégorie vide'; emptyText = 'Ouvre une recette et touche « Catégories » pour la ranger ici.';
+    emptyTitle = 'Catégorie vide';
+    emptyText = src === 'mine' ? 'Aucune de tes recettes perso dans cette catégorie.' : src === 'app' ? 'Aucune recette Zéro Chichi dans cette catégorie.' : 'Ouvre une recette et touche « Catégories » pour la ranger ici.';
   } else if (s === 'favs') {
     rows = recipes.filter(r => favs.includes(r.id));
     listTitle = 'Favoris';
     listSub = rows.length ? plural(rows.length, 'recette') + ' gardée' + (rows.length > 1 ? 's' : '') : '';
     emptyTitle = 'Aucun favori'; emptyText = 'Touche le cœur sur une recette pour la retrouver ici.';
   } else if (s === 'cats') {
-    listTitle = 'Catégories'; listSub = recipes.length + ' recettes';
+    listTitle = 'Catégories'; listSub = plural(pool.length, 'recette');
   }
 
   const ptr = usePullToRefresh(scrollRef, !sheet);
@@ -481,6 +486,17 @@ export default function App() {
               <h1 className="h" style={{ fontSize: 32, lineHeight: 1.1, margin: 0 }}>{listTitle}</h1>
               <div className="muted" style={{ fontSize: 13 }}>{listSub}</div>
             </div>
+            {(s === 'cats' || s === 'list') && (
+              <div role="radiogroup" aria-label="Recettes à afficher" style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 999, background: 'var(--color-surface)', border: '1px solid var(--color-divider)', alignSelf: 'flex-start', maxWidth: '100%' }}>
+                {[['all', 'Toutes'], ['app', 'Zéro Chichi'], ['mine', 'Mes recettes']].map(([k, l]) => (
+                  <button key={k} role="radio" aria-checked={src === k} className="reset" onClick={() => setSrc(k)}
+                    style={{ height: 36, padding: '0 14px', borderRadius: 999, fontSize: 13.5, fontWeight: 700, whiteSpace: 'nowrap', transition: 'background-color .15s, color .15s',
+                      background: src === k ? 'var(--color-text)' : 'transparent', color: src === k ? 'var(--color-bg)' : 'var(--color-text)' }}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -552,7 +568,7 @@ export default function App() {
               <div style={{ padding: '40px 12px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center', gridColumn: '1 / -1' }}>
                 <div className="h" style={{ fontSize: 20 }}>{emptyTitle}</div>
                 <div className="muted" style={{ fontSize: 14, maxWidth: 260 }}>{emptyText}</div>
-                {s === 'list' && !CORE_CATS.includes(top.cat) && (
+                {s === 'list' && src === 'all' && !CORE_CATS.includes(top.cat) && (
                   <button className="btn btn-secondary" style={{ marginTop: 12, height: 42, padding: '0 18px' }}
                     onClick={async () => { if (await removeCategory(top.cat).catch(() => false)) { back(); flash('Catégorie supprimée'); } }}>
                     Supprimer cette catégorie

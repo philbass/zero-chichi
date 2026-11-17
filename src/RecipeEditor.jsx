@@ -1,7 +1,7 @@
 // Saisie d'une recette : photo, titre, ingrédients (une case), étapes (une case chacune), détails facultatifs.
 // « Coller une recette entière » remplit les cases d'après un texte collé (ou une photo de fiche dans Claude).
 import { useEffect, useRef, useState } from 'react';
-import { WAIT_TYPES, formatPrompt, illus, imgUrl, ingredientToLine, normalizeRecipe, parseIngredient, parseRecipeText, guessCats, estimateTime } from './lib.js';
+import { WAIT_TYPES, aiPrompt, formatPrompt, illus, imgUrl, ingredientToLine, normalizeRecipe, parseIngredient, parseRecipeText, guessCats, estimateTime } from './lib.js';
 import { prepareIllustration } from './imageTools.js';
 import { getCapability } from './store.js';
 
@@ -43,6 +43,8 @@ export default function RecipeEditor({ initial, cats, onAddCat, onSave, onDelete
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [filled, setFilled] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [showPrompt, setShowPrompt] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
   const [canPhoto, setCanPhoto] = useState(false);
   const [image, setImage] = useState({ mode: 'keep' }); // keep | new (file, blob, url, cut) | remove
@@ -110,9 +112,10 @@ export default function RecipeEditor({ initial, cats, onAddCat, onSave, onDelete
   /* ── Coller une recette entière ── */
   const fillFrom = r => {
     const f = toForm(r);
+    const okCats = (r.cats || []).filter(c => cats.includes(c));
     setForm(x => ({ ...x, name: f.name || x.name, ing: f.ing || x.ing, t: f.t, p: f.p || x.p, unit: f.unit, wait: f.wait, waitType: f.waitType, notes: f.notes,
-      cats: r.cats?.length ? r.cats : x.cats }));
-    if (r.cats?.length) setCatsTouched(true);
+      tip: f.tip || x.tip, cats: okCats.length ? okCats : x.cats }));
+    if (okCats.length) setCatsTouched(true);
     setSteps(r.steps?.length ? [...r.steps] : steps);
     setPaste(null); setFilled(true); setError('');
   };
@@ -190,6 +193,22 @@ export default function RecipeEditor({ initial, cats, onAddCat, onSave, onDelete
       {paste && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 14, borderRadius: 24, background: 'var(--color-accent-100)' }}>
           <div style={{ fontSize: 15, fontWeight: 700 }}>Colle ta recette ici</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '10px 12px', borderRadius: 16, background: 'var(--color-bg)' }}>
+            <div style={{ fontSize: 13, lineHeight: 1.4 }}>
+              <b>Tu utilises une IA ?</b> (ChatGPT, Gemini, Le Chat…) Copie ce prompt, colle-le dans l'IA avec ta recette, puis colle sa réponse ici : tout se range tout seul.
+            </div>
+            <button className="btn btn-secondary" onClick={async () => {
+              try { await navigator.clipboard.writeText(aiPrompt(cats)); setCopied(true); setTimeout(() => setCopied(false), 2500); }
+              catch { setShowPrompt(true); }
+            }} style={{ alignSelf: 'flex-start', height: 38, padding: '0 14px', fontSize: 13.5, gap: 6 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+              {copied ? 'Prompt copié !' : 'Copier le prompt pour une IA'}
+            </button>
+            {showPrompt && (
+              <textarea id="recipe-ai-prompt" readOnly value={aiPrompt(cats)} rows={6} onFocus={e => e.target.select()}
+                aria-label="Prompt à copier" style={{ ...area, fontSize: 12.5, borderRadius: 12 }} />
+            )}
+          </div>
           <textarea id="recipe-paste" autoFocus value={paste.text} onChange={e => setPaste(p => ({ ...p, text: e.target.value }))} rows={7}
             placeholder={'Gratin de chou-fleur\n\nIngrédients :\n1 chou-fleur\n50 cl de lait\n…\n\nPréparation :\nPréchauffe le four…'} style={{ ...area, borderRadius: 18 }} />
           {canPhoto && (

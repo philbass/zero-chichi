@@ -96,23 +96,50 @@ export const ingredientToLine = ([q, u, n]) =>
   q == null ? 'un peu ' + n : typeof q === 'string' ? (q ? q + ' ' : '') + n : fmt(q) + (u ? ' ' + u : '') + ' ' + n;
 
 /* ── Analyse locale (sans Claude) d'un texte de recette collé ─────────── */
+/** Minutes écrites dans un texte : « 1 h 30 », « 45 min », « 2 h », « une nuit ». */
+function minutesIn(t) {
+  const n = norm(t);
+  if (/\bnuit\b/.test(n)) return 720;
+  let m = 0;
+  const h = n.match(/(\d+(?:[.,]\d+)?)\s*h(?:eures?)?\s*(\d{1,2})?/);
+  if (h) m += Math.round(parseFloat(h[1].replace(',', '.')) * 60) + (h[2] ? +h[2] : 0);
+  const mn = n.match(/(\d+)\s*(?:min|mn)/);
+  if (mn && !(h && h[2])) m += +mn[1];
+  const j = n.match(/(\d+)\s*jours?/);
+  if (j) m += +j[1] * 1440;
+  return m;
+}
+
 export function parseRecipeText(text) {
-  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-  const name = cleanLine(lines[0] || 'Nouvelle recette').replace(/\s*[:–-]\s*$/, '');
+  const lines = text.split(/\r?\n/).map(l => l.replace(/\*\*|__|^#+\s*/g, '').trim()).filter(Boolean);
+  const name = cleanLine(lines[0] || 'Nouvelle recette').replace(/^titre\s*:\s*/i, '').replace(/\s*[:–-]\s*$/, '');
   let mode = 'intro';
-  const ing = [], steps = [];
-  let t = 0, p = 4;
+  const ing = [], steps = [], tip = [];
+  let t = 0, p = 4, tSet = false, wait = null, cats = [];
   for (const raw of lines.slice(1)) {
     const l = cleanLine(raw);
     const low = norm(l);
+    // Lignes « clé : valeur » du format proposé aux IA.
+    let m;
+    if ((m = low.match(/^(?:pour|personnes?|portions?)\s*:?\s*(\d+)/))) { p = +m[1]; continue; }
+    if ((m = l.match(/^temps(?: actif)?\s*:\s*(.+)$/i))) { const v = minutesIn(m[1]); if (v) { t = v; tSet = true; } continue; }
+    if ((m = l.match(/^attente\s*:\s*(.+)$/i))) {
+      const v = minutesIn(m[1]);
+      const ty = norm(m[1]).match(/marinade|repos|frais|trempage|dessalage/);
+      if (v) wait = [v, ty ? { marinade: 'de marinade', repos: 'de repos', frais: 'au frais', trempage: 'de trempage', dessalage: 'de dessalage' }[ty[0]] : 'de repos'];
+      continue;
+    }
+    if ((m = l.match(/^cat[ée]gories?\s*:\s*(.+)$/i))) { cats = m[1].split(/[,;/]/).map(x => x.trim()).filter(Boolean); continue; }
+    if ((m = l.match(/^astuces?\s*:?\s*(.*)$/i))) { mode = 'tip'; if (m[1]) tip.push(m[1]); continue; }
     const pm = low.match(/pour\s+(\d+)\s*(?:pers|personnes)/);
     if (pm) p = +pm[1];
-    for (const tm of low.matchAll(/(?:preparation|cuisson|temps)[^0-9]*(\d+)\s*(h|min|mn)/g)) t += tm[2] === 'h' ? +tm[1] * 60 : +tm[1];
+    if (!tSet) for (const tm of low.matchAll(/(?:preparation|cuisson|temps)[^0-9]*(\d+)\s*(h|min|mn)/g)) t += tm[2] === 'h' ? +tm[1] * 60 : +tm[1];
     if (/^ingredients?\b/.test(low)) { mode = 'ing'; continue; }
     if (/^(preparation|instructions?|etapes?|recette)\b/.test(low) && l.length < 40) { mode = 'steps'; continue; }
     if (/^#/.test(l) || !l) continue;
     if (mode === 'ing') { if (l.length < 90 && !/:$/.test(l)) { const x = parseIngredient(l); if (x) ing.push(x); } }
     else if (mode === 'steps') { if (l.length > 3 && !/:$/.test(l)) steps.push(l); }
+    else if (mode === 'tip') tip.push(l);
   }
   // Pas de titres « Ingrédients » / « Préparation » : lignes courtes = ingrédients, phrases = étapes.
   if (!ing.length && !steps.length) {
@@ -124,8 +151,46 @@ export function parseRecipeText(text) {
       else steps.push(...splitSteps(l));
     }
   }
-  return { name, cats: [], t: t || 30, p, ing, steps: steps.flatMap(splitSteps), notes: ['Mise en forme simple : vérifie les quantités et raccourcis les étapes si besoin.'] };
+  const r = { name, cats, t: t || 30, p, ing, steps: steps.flatMap(splitSteps), notes: tSet ? [] : ['Mise en forme simple : vérifie les quantités et raccourcis les étapes si besoin.'] };
+  if (wait) r.wait = wait;
+  if (tip.length) r.tip = tip.join('\n');
+  return r;
 }
+
+/** Prompt à copier dans n'importe quelle IA (ChatGPT, Gemini, Le Chat…) : sa réponse se colle telle quelle dans l'app. */
+export const aiPrompt = cats => `Mets en forme la recette ci-dessous pour mon appli de cuisine « Zéro Chichi ».
+
+Réponds UNIQUEMENT avec le texte de la recette, sans introduction ni commentaire, exactement dans ce format :
+
+Titre de la recette
+Personnes : 4
+Temps : 45 min
+Attente : 2 h au frais
+Catégorie : ${cats.slice(0, 3).join(', ')}
+
+Ingrédients :
+- 200 g de farine
+- 3 œufs
+- sel, poivre
+
+Étapes :
+1. Préchauffe le four à 180 °C.
+2. …
+
+Astuce : …
+
+Règles :
+- Titre : court et naturel, sans emoji.
+- Personnes : un nombre. Temps : le temps actif (préparation + cuisson), sans les temps d'attente.
+- Attente : seulement s'il y a une marinade, un repos, un passage au frais, un trempage ou un dessalage de plus de 10 minutes (sinon supprime la ligne).
+- Catégorie : une ou deux, choisies uniquement dans cette liste : ${cats.join(', ')}.
+- Ingrédients : un par ligne, la quantité et l'unité d'abord (g, kg, ml, cl, L, c. à s., c. à c., pincée, gousses…).
+- Étapes : courtes (une ou deux phrases), au tutoiement (« Préchauffe », « Mélange »), en gardant tous les temps, températures et réglages.
+- Astuce : un conseil, une variante ou un accompagnement s'il y en a un (sinon supprime la ligne).
+- Pas d'emoji, pas de mise en forme en gras, pas de hashtags.
+
+Voici la recette :
+[colle ta recette ici]`;
 
 /** Découpe un paragraphe en étapes (une phrase ou deux par étape). Une étape courte reste telle quelle. */
 export function splitSteps(text) {

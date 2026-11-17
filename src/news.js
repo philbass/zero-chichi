@@ -2,6 +2,20 @@
 // Les nouvelles recettes sont retrouvées automatiquement grâce à leur date d'ajout (champ `added`).
 export const NEWS = [
   {
+    id: '2026-11-17-filtres',
+    date: '2026-11-17',
+    title: 'Tes recettes à part, et l\'aide d\'une IA',
+    groups: [
+      {
+        name: 'Nouveau',
+        items: [
+          { icon: 'list', title: 'Filtrer les catégories', text: 'En haut de la page Catégories : Toutes, Zéro Chichi ou Mes recettes.' },
+          { icon: 'clipboard', title: 'Un prompt pour ton IA', text: 'Dans « Coller une recette entière », copie le prompt pour ChatGPT, Gemini ou une autre IA, puis colle sa réponse : les cases se remplissent.', action: 'new' },
+        ],
+      },
+    ],
+  },
+  {
     id: '2026-11-16-saisie',
     date: '2026-11-16',
     title: 'Ajouter une recette, plus simple',
