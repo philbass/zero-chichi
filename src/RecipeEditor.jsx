@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { WAIT_TYPES, aiPrompt, formatPrompt, illus, imgUrl, ingredientToLine, normalizeRecipe, parseIngredient, parseRecipeText, guessCats, estimateTime } from './lib.js';
 import { prepareIllustration } from './imageTools.js';
 import { getCapability } from './store.js';
+const TOUCH = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
 
 const toForm = r => ({
   name: r.name || '',
@@ -209,7 +210,8 @@ export default function RecipeEditor({ initial, cats, onAddCat, onSave, onDelete
                 aria-label="Prompt à copier" style={{ ...area, fontSize: 12.5, borderRadius: 12 }} />
             )}
           </div>
-          <textarea id="recipe-paste" autoFocus value={paste.text} onChange={e => setPaste(p => ({ ...p, text: e.target.value }))} rows={7}
+          {/* Pas de clavier d'office sur téléphone / tablette : il cacherait le haut de l'encadré (consignes, prompt IA). */}
+          <textarea id="recipe-paste" autoFocus={!TOUCH} value={paste.text} onChange={e => setPaste(p => ({ ...p, text: e.target.value }))} rows={7}
             placeholder={'Gratin de chou-fleur\n\nIngrédients :\n1 chou-fleur\n50 cl de lait\n…\n\nPréparation :\nPréchauffe le four…'} style={{ ...area, borderRadius: 18 }} />
           {canPhoto && (
             paste.photo ? (
