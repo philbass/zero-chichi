@@ -195,7 +195,7 @@ export default function RecipeEditor({ initial, cats, onAddCat, onSave, onDelete
           <div style={{ fontSize: 15, fontWeight: 700 }}>Colle ta recette ici</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '10px 12px', borderRadius: 16, background: 'var(--color-bg)' }}>
             <div style={{ fontSize: 13, lineHeight: 1.4 }}>
-              <b>Tu utilises une IA ?</b> (ChatGPT, Gemini, Le Chat…) Copie ce prompt, colle-le dans l'IA avec ta recette, puis colle sa réponse ici : tout se range tout seul.
+              <b>Mets en forme ta recette avant de la coller ici, à l'aide de ce prompt IA.</b> Copie-le, colle-le dans ChatGPT, Gemini, Le Chat… avec ta recette, puis colle sa réponse ici : tout se range tout seul.
             </div>
             <button className="btn btn-secondary" onClick={async () => {
               try { await navigator.clipboard.writeText(aiPrompt(cats)); setCopied(true); setTimeout(() => setCopied(false), 2500); }
