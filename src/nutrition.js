@@ -7,10 +7,11 @@ import { norm } from './lib.js';
 const FOODS = [
   // À ne pas compter (eau, sel, épices en très petite quantité)
   [['eau'], 0, 0, 0, 0],
-  [['gros sel', 'sel', 'poivre', 'muscade', '4-epices', 'quatre-epices', 'bois d\'inde', 'clous de girofle', 'laurier', 'thym', 'herbes de provence', 'bouquet garni', 'sauge', 'estragon', 'cannelle', 'paprika', 'extrait de vanille', 'levure chimique', 'levure', 'tabasco', 'fleur de sel', 'aromates', 'romarin', 'origan', 'poudre de colombo', 'colombo', 'massale', 'sciure'], 0, 0, 0, 0],
+  [['gros sel', 'sel', 'poivre', 'muscade', '4-epices', 'quatre-epices', 'bois d\'inde', 'clous de girofle', 'laurier', 'thym', 'herbes de provence', 'bouquet garni', 'sauge', 'estragon', 'cannelle', 'paprika', 'extrait de vanille', 'levure chimique', 'levure', 'tabasco', 'fleur de sel', 'aromates', 'romarin', 'origan', 'poudre de colombo', 'colombo', 'massale', 'sciure', 'genievre'], 0, 0, 0, 0],
   // Viandes et poissons
   [['ailerons de poulet'], 150, 12, 0, 11, 45], // poids avec os
   [['cuisses de poulet'], 150, 14, 0, 10, 250], // poids avec os
+  [['magrets de canard', 'magret de canard', 'magret'], 230, 19, 0, 17, 400],
   [['cuisses de canard confites', 'canard confit'], 260, 17, 0, 21, 250], // poids avec os
   [['filets de poulet', 'poulet'], 120, 23, 0, 2.5, 140],
   [['blanquette de veau', 'tendron de veau'], 200, 19, 0, 14, 200],
