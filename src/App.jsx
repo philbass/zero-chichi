@@ -794,7 +794,6 @@ function RecipeView({ r, land, wide, onVoice, fav, portions, setPortions, onBack
       ...(land
         ? { height: 'min(46vh, 360px)', borderRadius: 40, padding: '62px 20px 20px' }
         : { height: `calc(min(96vw, ${wide ? 460 : 380}px) + var(--status-h))`, marginTop: 'calc(-1 * var(--status-h))', borderRadius: '0 0 40px 40px', padding: 'calc(58px + var(--status-h)) 10px 14px' }) }}>
-      {!imgUrl(r) && <div style={{ position: 'absolute', bottom: 16, left: 22, font: '500 10px ui-monospace,Menlo,monospace', color: 'var(--color-neutral-700)' }}>illustration du plat</div>}
       <div style={{ position: 'absolute', top: land ? 12 : 'calc(10px + var(--status-h))', left: 16, right: 16, display: 'flex', justifyContent: 'space-between' }}>
         <button className="icon-btn raised" onClick={onBack} aria-label="Retour"><BackIcon size={22} /></button>
         <div style={{ display: 'flex', gap: 10 }}>

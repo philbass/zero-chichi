@@ -1,5 +1,5 @@
 // Dessine la fiche recette en image PNG (pour WhatsApp, SMS, mail…).
-import { BASE, waitLabel, fmtT, imgUrl, ingList, portionLabel } from './lib.js';
+import { BASE, waitLabel, fmtT, shownImg, ingList, portionLabel } from './lib.js';
 import { recipeUrl, drawQR, APP_URL_SHORT } from './share.jsx';
 
 const C = {
@@ -39,7 +39,7 @@ export async function renderRecipeCard(r, portions) {
     document.fonts?.load('700 30px Figtree'),
     document.fonts?.load('400 30px Figtree'),
   ].filter(Boolean)).catch(() => {});
-  const [illu, logo] = await Promise.all([loadImg(imgUrl(r)), loadImg(`${BASE}assets/logo-mark.png`)]);
+  const [illu, logo] = await Promise.all([loadImg(shownImg(r)), loadImg(`${BASE}assets/logo-mark.png`)]);
 
   const H_FONT = '"Caprasimo", Georgia, serif';
   const B_FONT = '"Figtree", system-ui, sans-serif';

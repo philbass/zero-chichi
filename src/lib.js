@@ -33,9 +33,10 @@ export const ingList = (r, portions) => {
 export const imgUrl = r => (r.imgData ? r.imgData
   : r.imgAsset ? '/_blob/' + r.imgAsset
   : r.img ? `${BASE}assets/illus/${r.img.includes('.') ? r.img : r.img + '.png'}` : null);
-export const illus = (r, tint, url = imgUrl(r)) => url
-  ? `var(--color-${tint}-200) url("${url}") center / contain no-repeat`
-  : 'repeating-linear-gradient(135deg,var(--color-neutral-300) 0 7px,var(--color-neutral-200) 7px 14px)';
+// Illustration par défaut (ustensiles sur une planche) pour les recettes sans image.
+export const DEFAULT_IMG = `${BASE}assets/illus/_defaut.webp`;
+export const shownImg = r => imgUrl(r) || DEFAULT_IMG;
+export const illus = (r, tint, url = imgUrl(r)) => `var(--color-${tint}-200) url("${url || DEFAULT_IMG}") center / contain no-repeat`;
 
 /* ── Ingrédients : « 200 g de farine » ⇄ [200, 'g', 'farine'] ─────────── */
 const UNITS = [
