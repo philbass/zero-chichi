@@ -2,6 +2,19 @@
 // Les nouvelles recettes sont retrouvées automatiquement grâce à leur date d'ajout (champ `added`).
 export const NEWS = [
   {
+    id: '2026-11-17-video',
+    date: '2026-11-17',
+    title: 'La visite guidée en vidéo',
+    groups: [
+      {
+        name: 'Nouveau',
+        items: [
+          { icon: 'play', title: 'Découvrir l\'appli en 45 secondes', text: 'Recherche, portions, courses, mode cuisine, recettes perso : tout l\'essentiel en une courte vidéo. Elle est aussi sur l\'accueil.', action: 'video' },
+        ],
+      },
+    ],
+  },
+  {
     id: '2026-11-17-filtres',
     date: '2026-11-17',
     title: 'Tes recettes à part, et l\'aide d\'une IA',
@@ -102,6 +115,7 @@ export const NEWS = [
 ];
 
 export const NEWS_ICONS = {
+  play: ['M7 4.5v15l12-7.5z'],
   send: ['M22 2 11 13', 'M22 2 15 22l-4-9-9-4z'],
   share: ['M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8', 'M16 6l-4-4-4 4M12 2v13'],
   link: ['M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71', 'M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'],

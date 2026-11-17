@@ -1,5 +1,5 @@
 // Zéro Chichi hors ligne : tout est enregistré à l'installation, puis le réseau sert les mises à jour.
-const CACHE = 'zero-chichi-v5';
+const CACHE = 'zero-chichi-v6';
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
     const c = await caches.open(CACHE);
@@ -16,6 +16,7 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
+  if (/\.mp4$/.test(new URL(req.url).pathname)) return; // vidéo : lecture par morceaux, laissée au navigateur
   e.respondWith(
     fetch(req)
       .then(res => { if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); } return res; })

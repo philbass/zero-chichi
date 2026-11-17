@@ -36,3 +36,8 @@ export function startStats() {
   // Installation au moment où elle se fait (Chrome / Android seulement).
   window.addEventListener('appinstalled', () => send('installation-android', 'Installation (Android)'));
 }
+
+/* Un évènement ponctuel (ex. présentation vidéo passée ou regardée). */
+export function track(path, title) {
+  if (LIVE) send(path, title);
+}

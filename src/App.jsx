@@ -12,6 +12,7 @@ import { seasonsOf, currentSeason, SEASON_LABEL } from './season.js';
 import { canSpeak, speak, pauseSpeaking, resumeSpeaking, stopSpeaking, speakable, recipeScript, stepScript, useVoiceSettings, useVoices, getVoiceSettings, defaultVoiceURI, voiceRegion } from './speech.js';
 import { NEWS, NEWS_ICONS, latestNews, newsSeen, markNewsSeen, newsVisited, markNewsVisited } from './news.js';
 import { SeasonalLogo } from './seasonLogo.jsx';
+import Onboarding, { DiscoverCard } from './onboarding.jsx';
 import { HeartButton, Confetti, Swipeable, flyDots, withHeroTransition, supportsHeroTransition } from './anim.jsx';
 
 const TINTS = ['accent', 'accent-2', 'neutral'];
@@ -79,6 +80,8 @@ const DEEP = (() => { const id = takeDeepLink(); return RECIPES.find(r => r.id =
 
 /* Nouvelles recettes depuis la dernière visite : comparées à la liste vue au lancement précédent. */
 const SEEN = 'zc:seenRecipes';
+/* Tout premier lancement sur cet appareil (avant que la liste des recettes vues soit enregistrée). */
+const FIRST_VISIT = (() => { try { return !localStorage.getItem(SEEN); } catch { return false; } })();
 const NEW_AT_LAUNCH = (() => {
   try {
     const raw = localStorage.getItem(SEEN);
@@ -111,6 +114,11 @@ export default function App() {
     document.addEventListener('visibilitychange', h);
     return () => document.removeEventListener('visibilitychange', h);
   }, []);
+  /* Présentation vidéo : d'office au tout premier lancement (pas si on arrive par un lien de recette), puis depuis l'accueil. */
+  const [onb, setOnb] = useState(() => (FIRST_VISIT && !DEEP && !SHARED && !load('onboardingVu', false) ? 'first' : null));
+  const closeOnb = () => { save('onboardingVu', true); setOnb(null); };
+  const [discoverHidden, setDiscoverHidden] = useState(() => load('decouvrirMasque', false));
+  const hideDiscover = () => { save('decouvrirMasque', true); setDiscoverHidden(true); flash('Tu retrouveras la vidéo dans « Quoi de neuf ? »'); };
   const [favs, setFavs] = useState(() => load('favs', []));
   const [courses, setCourses] = useState(() => load('courses', []));
   const [q, setQ] = useState('');
@@ -362,6 +370,7 @@ export default function App() {
               </span>
             </button>
             </div>
+            {!discoverHidden && <DiscoverCard wide={wide} onOpen={() => setOnb('again')} onHide={hideDiscover} />}
             {newsUnseen && (
               <div className="screen" style={{ position: 'relative', marginTop: wide ? -12 : -8 }}>
                 <button className="reset press" onClick={openNews}
@@ -621,6 +630,7 @@ export default function App() {
               if (a === 'app') setSheet({ type: 'app' });
               else if (a === 'home') tab('home');
               else if (a === 'new') go({ s: 'new' });
+              else if (a === 'video') setOnb('again');
               else if (a === 'voice') setSheet({ type: 'voice' });
               else if (a === 'random') { const pool = recipes.filter(r => !r.custom); go({ s: 'recipe', id: pool[Math.floor(Math.random() * pool.length)].id }); }
             }} />
@@ -695,6 +705,7 @@ export default function App() {
       {sheet?.type === 'newcat' && (
         <NewCatSheet onClose={() => setSheet(null)} onAdd={async n => { const name = await addCat(n); if (name) setSheet(null); }} />
       )}
+      {onb && <Onboarding first={onb === 'first'} onClose={closeOnb} />}
       {sheet?.type === 'app' && <AppShareSheet onClose={() => setSheet(null)} flash={flash} />}
       {sheet?.type === 'install' && <InstallGuide onClose={() => setSheet(null)} flash={flash} />}
       {sheet?.type === 'voice' && <VoiceSheet onClose={() => setSheet(null)} />}

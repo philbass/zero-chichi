@@ -313,3 +313,38 @@ html.tablet [role="dialog"] { max-width: 560px; margin: 0 auto; }
 /* Tirer pour actualiser (iPhone). */
 .ptr-spin { animation: ptr-spin .8s linear infinite; }
 @keyframes ptr-spin { to { transform: rotate(360deg); } }
+
+/* ══ Présentation vidéo ═════════════════════════════════════ */
+.onboarding {
+  position: absolute; inset: 0; z-index: 300;
+  background: #FAF6EA; /* même crème que le fond de la vidéo : pas de bandes visibles */
+  display: flex; align-items: center; justify-content: center;
+  animation: onb-in .25s ease;
+}
+.onboarding video { width: 100%; height: 100%; object-fit: contain; display: block; }
+.onboarding-top {
+  position: absolute; left: 0; right: 0; top: 0;
+  padding: calc(var(--status-h, 0px) + 10px) 16px 0;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+}
+.onboarding-bar { align-self: stretch; height: 4px; border-radius: 999px; background: rgba(31, 59, 47, .15); overflow: hidden; }
+.onboarding-bar span { display: block; height: 100%; background: var(--color-accent-2-700); transform-origin: left; }
+.onboarding-skip {
+  height: 38px; padding: 0 18px; border-radius: 999px;
+  background: rgba(31, 59, 47, .82); color: var(--color-bg);
+  font-size: 14px; font-weight: 700;
+}
+.onboarding-play {
+  position: absolute; width: 84px; height: 84px; border-radius: 50%;
+  background: rgba(31, 59, 47, .82); color: var(--color-bg);
+  display: grid; place-items: center; padding-left: 6px;
+}
+.onboarding-end {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  padding: 0 28px calc(var(--bottom-safe, 0px) + 34px);
+  margin: 0 auto; max-width: 420px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  animation: onb-in .35s ease;
+}
+@keyframes onb-in { from { opacity: 0; } }
+html.tablet .onboarding[role="dialog"] { max-width: none; margin: 0; }
