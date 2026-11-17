@@ -13,6 +13,7 @@ import { canSpeak, speak, pauseSpeaking, resumeSpeaking, stopSpeaking, speakable
 import { NEWS, NEWS_ICONS, latestNews, newsSeen, markNewsSeen, newsVisited, markNewsVisited } from './news.js';
 import { SeasonalLogo } from './seasonLogo.jsx';
 import Onboarding, { DiscoverCard } from './onboarding.jsx';
+import PrintSheet, { PRINTER, printRecipe } from './print.jsx';
 import { HeartButton, Confetti, Swipeable, flyDots, withHeroTransition, supportsHeroTransition } from './anim.jsx';
 
 const TINTS = ['accent', 'accent-2', 'neutral'];
@@ -593,6 +594,7 @@ export default function App() {
           <RecipeView r={recipe} land={tablet === 'land'} wide={wide} onVoice={() => setSheet({ type: 'voice' })} fav={favs.includes(recipe.id)} portions={portions} setPortions={setPortions}
             onBack={back} onFav={() => toggleFav(recipe.id)}
             onShare={() => setSheet({ type: 'share', id: recipe.id })}
+            onPrint={() => { if (!printRecipe()) flash('Impression impossible sur cet appareil'); }}
             onCats={() => setSheet({ type: 'cats', id: recipe.id })}
             onEdit={() => go({ s: 'edit', id: recipe.id })}
             onOpenId={id => { const x = byId(id); if (x) go({ s: 'recipe', id }); }} />
@@ -705,6 +707,7 @@ export default function App() {
       {sheet?.type === 'newcat' && (
         <NewCatSheet onClose={() => setSheet(null)} onAdd={async n => { const name = await addCat(n); if (name) setSheet(null); }} />
       )}
+      {isRecipe && <PrintSheet r={recipe} portions={portions} />}
       {onb && <Onboarding first={onb === 'first'} onClose={closeOnb} />}
       {sheet?.type === 'app' && <AppShareSheet onClose={() => setSheet(null)} flash={flash} />}
       {sheet?.type === 'install' && <InstallGuide onClose={() => setSheet(null)} flash={flash} />}
@@ -797,7 +800,7 @@ function ChipRow({ label, options, value, onChange, render }) {
   );
 }
 
-function RecipeView({ r, land, wide, onVoice, fav, portions, setPortions, onBack, onFav, onShare, onCats, onEdit, onOpenId }) {
+function RecipeView({ r, land, wide, onVoice, fav, portions, setPortions, onBack, onFav, onShare, onPrint, onCats, onEdit, onOpenId }) {
   const ing = ingList(r, portions);
   const px = land ? 0 : wide ? 40 : 22;
   const hero = (
@@ -808,6 +811,7 @@ function RecipeView({ r, land, wide, onVoice, fav, portions, setPortions, onBack
       <div style={{ position: 'absolute', top: land ? 12 : 'calc(10px + var(--status-h))', left: 16, right: 16, display: 'flex', justifyContent: 'space-between' }}>
         <button className="icon-btn raised" onClick={onBack} aria-label="Retour"><BackIcon size={22} /></button>
         <div style={{ display: 'flex', gap: 10 }}>
+          <button className="icon-btn raised" onClick={onPrint} aria-label="Imprimer la recette"><Icon d={PRINTER} /></button>
           <button className="icon-btn raised" onClick={onShare} aria-label="Partager en image"><Icon d={SHARE} /></button>
           <HeartButton className="icon-btn raised" fav={fav} onToggle={onFav} />
         </div>
