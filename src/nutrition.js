@@ -19,6 +19,7 @@ const FOODS = [
   [['joue de boeuf'], 160, 21, 0, 8.5],
   [['queue de boeuf'], 140, 11, 0, 11], // poids avec os
   [['langue de boeuf'], 220, 15, 0, 18],
+  [['epaule ou gigot d\'agneau', 'gigot d\'agneau', 'epaule d\'agneau'], 180, 18, 0, 12, 2500], // pièce entière avec os ≈ 2,5 kg
   [['epigramme d\'agneau', 'agneau'], 250, 15, 0, 21], // poitrine, poids avec os
   [['tete de veau'], 150, 16, 0, 9.5, 3000], // une tête entière désossée ≈ 3 kg
   [['viande hachee', 'steak hache'], 215, 18, 0, 15], // bœuf haché 15 %
