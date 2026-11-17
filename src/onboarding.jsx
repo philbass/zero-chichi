@@ -89,19 +89,22 @@ export default function Onboarding({ first, onClose }) {
     else seek(t - CHAPTERS[i].t > 1.5 || i === 0 ? CHAPTERS[i].t : CHAPTERS[i - 1].t); // comme les Stories : d'abord le début du chapitre
   };
 
-  // Toucher : côté gauche = chapitre précédent, ailleurs = suivant ; appui long = pause tant qu'on garde le doigt.
+  // Toucher : côté gauche = chapitre précédent, ailleurs = suivant ; glisser aussi ; appui long = pause tant qu'on garde le doigt.
   const onDown = e => {
     if (ended) return;
     const x = (e.clientX - e.currentTarget.getBoundingClientRect().left) / e.currentTarget.clientWidth;
-    press.current = { x, timer: setTimeout(() => { press.current.hold = true; setHeld(true); ref.current?.pause(); }, HOLD_MS) };
+    press.current = { x, cx: e.clientX, cy: e.clientY, timer: setTimeout(() => { press.current.hold = true; setHeld(true); ref.current?.pause(); }, HOLD_MS) };
   };
-  const onUp = () => {
+  const onUp = e => {
     const p = press.current;
     press.current = null;
     if (!p) return;
     clearTimeout(p.timer);
     if (p.hold) { setHeld(false); ref.current?.play().catch(() => {}); return; }
     if (blocked) { seek(ref.current?.currentTime || 0); return; }
+    // Glisser vers la gauche = chapitre suivant, vers la droite = précédent ; sinon simple toucher.
+    const dx = e.clientX - p.cx, dy = e.clientY - p.cy;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) { step(dx < 0 ? 1 : -1); return; }
     step(p.x < 0.3 ? -1 : 1);
   };
   const onCancel = () => { const p = press.current; press.current = null; if (p) { clearTimeout(p.timer); if (p.hold) { setHeld(false); ref.current?.play().catch(() => {}); } } };
@@ -113,7 +116,7 @@ export default function Onboarding({ first, onClose }) {
     <div className="onboarding" role="dialog" aria-modal="true" aria-label="Présentation de Zéro Chichi">
       <video ref={ref} src={ONBOARDING_VIDEO} poster={ONBOARDING_POSTER} muted playsInline preload="auto"
         onEnded={() => setEnded(true)} />
-      <div className="onboarding-touch" onPointerDown={onDown} onPointerUp={onUp} onPointerCancel={onCancel} onPointerLeave={onCancel}
+      <div className="onboarding-touch" onPointerDown={onDown} onPointerMove={e => { const p = press.current; if (p && !p.hold && Math.abs(e.clientX - p.cx) > 12) clearTimeout(p.timer); }} onPointerUp={onUp} onPointerCancel={onCancel} onPointerLeave={onCancel}
         onContextMenu={e => e.preventDefault()} aria-hidden="true" />
 
       <div className={'onboarding-top' + (held ? ' dim' : '')}>
@@ -135,7 +138,7 @@ export default function Onboarding({ first, onClose }) {
         </div>
       </div>
 
-      {hint && !blocked && !ended && <div className="onboarding-hint" aria-hidden="true">Touche à droite pour avancer · Appui long : pause</div>}
+      {hint && !blocked && !ended && <div className="onboarding-hint" aria-hidden="true">Touche ou glisse pour avancer · Appui long : pause</div>}
 
       {blocked && !ended && (
         <button className="reset onboarding-play" onClick={() => seek(ref.current?.currentTime || 0)} aria-label="Lire la vidéo">
