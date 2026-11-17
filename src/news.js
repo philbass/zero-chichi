@@ -2,6 +2,19 @@
 // Les nouvelles recettes sont retrouvées automatiquement grâce à leur date d'ajout (champ `added`).
 export const NEWS = [
   {
+    id: '2026-11-17-impression',
+    date: '2026-11-17',
+    title: 'Imprimer une recette',
+    groups: [
+      {
+        name: 'Nouveau',
+        items: [
+          { icon: 'printer', title: 'Une recette sur papier', text: 'Sur une fiche recette, touche l\'imprimante en haut : une page claire avec les ingrédients à cocher, les étapes et un QR code pour retrouver la recette. Les quantités suivent les portions choisies. Tu peux aussi l\'enregistrer en PDF.', action: 'random' },
+        ],
+      },
+    ],
+  },
+  {
     id: '2026-11-17-video',
     date: '2026-11-17',
     title: 'La visite guidée en vidéo',
@@ -115,6 +128,7 @@ export const NEWS = [
 ];
 
 export const NEWS_ICONS = {
+  printer: ['M6 9V3h12v6', 'M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2', 'M6 14h12v7H6z'],
   play: ['M7 4.5v15l12-7.5z'],
   send: ['M22 2 11 13', 'M22 2 15 22l-4-9-9-4z'],
   share: ['M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8', 'M16 6l-4-4-4 4M12 2v13'],
