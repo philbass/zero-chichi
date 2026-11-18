@@ -116,6 +116,7 @@ async function generer(texte, avecFormat = true) {
       const e = new Error('facturation non activée sur le projet Google de la clé (offre gratuite : 0 image autorisée)');
       e.fatal = true; throw e;
     }
+    if (res.status === 402) { const e = new Error('crédit prépayé Google épuisé : recharge-le dans AI Studio'); e.fatal = true; throw e; }
     if (res.status === 401 || res.status === 403) { const e = new Error('clé GEMINI_API_KEY refusée'); e.fatal = true; throw e; }
     throw new Error(`Gemini ${res.status} : ${msg.split('\n')[0].slice(0, 200)}`);
   }
