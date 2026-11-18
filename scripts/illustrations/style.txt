@@ -1,3 +1,4 @@
+IMPORTANT: the image must contain absolutely no text: no words, no labels, no captions, no handwriting, no letters on jars or packaging. Ingredients are drawn, never named.
 Hand-drawn food illustration in a vintage recipe-notebook style: fine sepia ink linework with soft, warm watercolor washes, exactly like the reference images.
 Subject: "{plat}" (a French home-cooking recipe), shown in the center, three-quarter view from slightly above, in the serving dish that suits it, often on a rustic wooden board.
 Around it: {ingredients}, in small ceramic bowls or on the board, with fresh herbs and antique engraved silver cutlery.
