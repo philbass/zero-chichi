@@ -97,7 +97,12 @@ async function generer(texte, avecFormat = true) {
   if (!res.ok) {
     const msg = json.error?.message || res.statusText;
     if (avecFormat && res.status === 400 && /imageConfig|aspect/i.test(msg)) return generer(texte, false);
-    throw new Error(`Gemini ${res.status} : ${msg}`);
+    if (res.status === 429 && /free_tier|limit: 0/.test(msg)) {
+      const e = new Error('facturation non activée sur le projet Google de la clé (offre gratuite : 0 image autorisée)');
+      e.fatal = true; throw e;
+    }
+    if (res.status === 401 || res.status === 403) { const e = new Error('clé GEMINI_API_KEY refusée'); e.fatal = true; throw e; }
+    throw new Error(`Gemini ${res.status} : ${msg.split('\n')[0].slice(0, 200)}`);
   }
   const part = json.candidates?.[0]?.content?.parts?.find(p => p.inlineData || p.inline_data);
   if (!part) throw new Error('aucune image renvoyée (' + (json.candidates?.[0]?.finishReason || 'raison inconnue') + ')');
@@ -124,11 +129,16 @@ for (const r of cibles) {
       break;
     } catch (e) {
       derniere = e;
+      if (e.fatal) break;
       console.warn(`… ${r.id}, essai ${essai} : ${e.message}`);
       await new Promise(ok => setTimeout(ok, 3000 * essai));
     }
   }
-  if (derniere) { ratees.push({ id: r.id, raison: derniere.message }); console.error(`❌ ${r.id}`); }
+  if (derniere) {
+    ratees.push({ id: r.id, raison: derniere.message }); console.error(`❌ ${r.id} : ${derniere.message}`);
+    // Problème de clé ou de facturation : inutile d'essayer les suivantes.
+    if (derniere.fatal) { for (const x of cibles.slice(cibles.indexOf(r) + 1)) ratees.push({ id: x.id, raison: derniere.message }); break; }
+  }
 }
 
 if (data !== src) writeFileSync(DATA, data);
