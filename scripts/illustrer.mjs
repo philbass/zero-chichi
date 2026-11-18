@@ -59,9 +59,24 @@ const ingredients = r => (r.ing || [])
   .slice(0, 4);
 
 const style = readFileSync(join(DIR, 'style.txt'), 'utf8');
+// Mise en scène : dépend de la catégorie, et varie d'une recette à l'autre (toujours la même pour une recette).
+const scenes = JSON.parse(readFileSync(join(DIR, 'scenes.json'), 'utf8'));
+const hash = s => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
+export const scene = r => {
+  const cat = Object.keys(scenes).find(c => (r.cats || []).includes(c)) || '*';
+  const choix = scenes[cat];
+  return choix[hash(r.id) % choix.length];
+};
 const prompt = r => style
   .replace('{plat}', r.name)
+  .replace('{scene}', scenes.decors[scene(r)])
   .replace('{ingredients}', ingredients(r).join(', ') || 'a few of its key ingredients');
+
+// node scripts/illustrer.mjs --scenes : affiche la mise en scène de chaque recette, sans rien générer.
+if (process.argv[2] === '--scenes') {
+  for (const r of ALL_RECIPES) console.log(scene(r).padEnd(13), r.id);
+  process.exit(0);
+}
 
 const refs = readdirSync(join(DIR, 'references'))
   .filter(f => /\.(jpe?g|png|webp)$/i.test(f))
