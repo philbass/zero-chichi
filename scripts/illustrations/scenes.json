@@ -1,0 +1,57 @@
+{
+  "_": "Mises en scène par catégorie (première catégorie trouvée dans cet ordre). Chaque recette reçoit toujours la même, choisie d'après son identifiant.",
+  "Soupe": [
+    "tableTorchon",
+    "dessusLin"
+  ],
+  "Desserts": [
+    "dessusLin",
+    "vichy",
+    "planche",
+    "presentoir"
+  ],
+  "Cakes": [
+    "presentoir",
+    "vichy"
+  ],
+  "Apéro": [
+    "ardoise",
+    "dessusLin",
+    "vichy"
+  ],
+  "Entrées": [
+    "dessusLin",
+    "ardoise",
+    "assiette",
+    "planche"
+  ],
+  "Pâtes": [
+    "dessusLin",
+    "assiette"
+  ],
+  "Tartes salées": [
+    "dessusLin",
+    "vichy"
+  ],
+  "Accompagnement": [
+    "planche",
+    "dessusLin",
+    "vichy"
+  ],
+  "*": [
+    "planche",
+    "planche",
+    "tableTorchon",
+    "vichy",
+    "assiette"
+  ],
+  "decors": {
+    "planche": "three-quarter view from slightly above, on a rustic wooden board, cutlery on the left",
+    "tableTorchon": "three-quarter view, the cooking pot or tureen set directly on a folded striped linen tea towel, with a ladle or wooden spoon, cutlery on the right",
+    "vichy": "three-quarter view, on a folded red-and-white gingham tablecloth, cutlery on the right",
+    "dessusLin": "seen straight from above (flat lay, top-down view), on a round off-white linen napkin, cutlery laid alongside",
+    "assiette": "a single plated serving seen from a low angle, almost at eye level, on a simple cream plate, with a folded linen napkin and cutlery beside it",
+    "ardoise": "seen straight from above (flat lay), arranged on a small dark slate board",
+    "presentoir": "three-quarter view, on a vintage white cake stand, with a cake server beside it"
+  }
+}
