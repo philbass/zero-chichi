@@ -1,0 +1,8 @@
+IMPORTANT: the image must contain absolutely no text: no words, no labels, no captions, no handwriting, no letters on jars or packaging. Ingredients are drawn, never named.
+Hand-drawn food illustration in a vintage recipe-notebook style: fine sepia ink linework with soft, warm watercolor washes, exactly like the reference images.
+Copy only the drawing technique, colours and paper texture of the reference images, NOT their layout or composition.
+Subject: "{plat}" (a French home-cooking recipe), in the serving dish that suits it.
+Scene: {scene}.
+Around it: {ingredients}, in small ceramic bowls, with fresh herbs and antique engraved silver cutlery.
+Leave generous empty space around the scene. Plain flat sage-green background (#8FA58C), uniform from edge to edge, no vignette, no gradient, no cast shadow on the background.
+Landscape format. No text, no labels, no lettering, no writing anywhere, not even on jars, packaging or pots.

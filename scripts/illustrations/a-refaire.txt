@@ -1,0 +1,2 @@
+# Recettes dont l'illustration est à (re)générer : un identifiant par ligne.
+# Les lignes traitées avec succès sont retirées automatiquement.

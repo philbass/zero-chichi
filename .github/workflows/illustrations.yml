@@ -1,0 +1,77 @@
+# Génère les illustrations manquantes des recettes (Gemini, style « carnet »).
+#
+# - À chaque envoi sur une branche de travail (pas main) qui touche aux recettes :
+#   les recettes sans image reçoivent la leur, ajoutée à la branche, puis un
+#   commentaire avec les images est posté sur la Pull Request pour validation.
+# - Commentaire « /refaire id1 id2 » sur une Pull Request (par le propriétaire) :
+#   régénère ces illustrations-là.
+# Rien n'est mis en ligne tant que la Pull Request n'est pas fusionnée dans main.
+name: Illustrations des recettes
+on:
+  push:
+    branches-ignore: [main]
+    paths:
+      - src/data.js
+      - scripts/illustrations/**
+  issue_comment:
+    types: [created]
+permissions:
+  contents: write
+  pull-requests: write
+concurrency:
+  group: illustrations-${{ github.event.issue.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  illustrer:
+    if: >-
+      github.event_name == 'push' ||
+      (github.event.issue.pull_request && startsWith(github.event.comment.body, '/refaire') &&
+       github.event.comment.author_association == 'OWNER')
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Branche de la Pull Request
+        id: pr
+        if: github.event_name == 'issue_comment'
+        run: |
+          echo "ref=$(gh api repos/$REPO/pulls/${{ github.event.issue.number }} --jq .head.ref)" >> "$GITHUB_OUTPUT"
+          gh api repos/$REPO/issues/comments/${{ github.event.comment.id }}/reactions -f content=eyes > /dev/null
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr.outputs.ref || github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-save --no-package-lock sharp@0.34
+      - name: Générer les illustrations
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          A_REFAIRE: ${{ github.event_name == 'issue_comment' && github.event.comment.body || '' }}
+          RAPPORT: ${{ runner.temp }}/rapport.md
+        run: |
+          export A_REFAIRE="${A_REFAIRE#/refaire}"
+          node scripts/illustrer.mjs
+      - name: Enregistrer sur la branche
+        id: commit
+        if: always()
+        run: |
+          git add public/assets/illus src/data.js scripts/illustrations/a-refaire.txt
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Illustrations générées automatiquement"
+          git push
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Montrer les images sur la Pull Request
+        if: always()
+        run: |
+          F="${{ runner.temp }}/rapport.md"
+          [ -s "$F" ] || exit 0
+          BRANCHE="${{ steps.pr.outputs.ref || github.ref_name }}"
+          N=$(gh api "repos/$REPO/pulls?head=${REPO%%/*}:$BRANCHE&state=open" --jq '.[0].number // empty')
+          [ -n "$N" ] || { echo "Pas de Pull Request ouverte pour $BRANCHE"; cat "$F"; exit 0; }
+          SHA="${{ steps.commit.outputs.sha }}"; SHA="${SHA:-$BRANCHE}"
+          sed -i "s#{REPO}#$REPO#g; s#{SHA}#$SHA#g" "$F"
+          gh api repos/$REPO/issues/$N/comments -F body=@"$F" > /dev/null
