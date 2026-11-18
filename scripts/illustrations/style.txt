@@ -1,0 +1,5 @@
+Hand-drawn food illustration in a vintage recipe-notebook style: fine sepia ink linework with soft, warm watercolor washes, exactly like the reference images.
+Subject: "{plat}" (a French home-cooking recipe), shown in the center, three-quarter view from slightly above, in the serving dish that suits it, often on a rustic wooden board.
+Around it: {ingredients}, in small ceramic bowls or on the board, with fresh herbs and antique engraved silver cutlery.
+Leave generous empty space around the scene. Plain flat sage-green background (#8FA58C), uniform from edge to edge, no vignette, no gradient, no cast shadow on the background.
+Landscape format. No text, no labels, no lettering, no writing anywhere, not even on jars, packaging or pots.
