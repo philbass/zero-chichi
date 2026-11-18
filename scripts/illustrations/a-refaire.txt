@@ -1,8 +1,2 @@
 # Recettes dont l'illustration est à (re)générer : un identifiant par ligne.
 # Les lignes traitées avec succès sont retirées automatiquement.
-soupe-oignon-gratinee
-boeuf-bourguignon
-petit-sale-lentilles
-oeufs-cocotte
-puree-maison
-tarte-fraises
