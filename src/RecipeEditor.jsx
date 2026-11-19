@@ -1,6 +1,8 @@
 // Saisie d'une recette : photo, titre, ingrédients (une case), étapes (une case chacune), détails facultatifs.
 // « Coller une recette entière » remplit les cases d'après un texte collé (ou une photo de fiche dans Claude).
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { illustrationPrompt } from './illusPrompt.js';
 import { WAIT_TYPES, aiPrompt, formatPrompt, illus, imgUrl, ingredientToLine, normalizeRecipe, parseIngredient, parseRecipeText, guessCats, estimateTime } from './lib.js';
 import { prepareIllustration } from './imageTools.js';
 import { getCapability } from './store.js';
@@ -51,6 +53,8 @@ export default function RecipeEditor({ initial, cats, onAddCat, onSave, onDelete
   const [canPhoto, setCanPhoto] = useState(false);
   const [image, setImage] = useState({ mode: 'keep' }); // keep | new (file, blob, url, cut) | remove
   const [saving, setSaving] = useState(false);
+  const [photoSheet, setPhotoSheet] = useState(null); // null | 'choice' | 'ai'
+  const fileRef = useRef(null);
   const abort = useRef(null);
   // Saisie modifiée et pas encore enregistrée : l'app demande confirmation avant de quitter.
   const startSnap = useRef(null);
@@ -260,34 +264,37 @@ export default function RecipeEditor({ initial, cats, onAddCat, onSave, onDelete
         </div>
       )}
 
-      {/* Photo du plat */}
+      {/* Photo du plat : on choisit d'abord entre une illustration IA et la galerie. */}
+      <input ref={fileRef} id="recipe-illus" type="file" accept="image/*" hidden onChange={e => { pickImage(e.target.files?.[0], image.mode === 'new' ? image.cut : true); e.target.value = ''; }} />
       {currentUrl ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ height: 170, borderRadius: 26, background: illus({}, 'accent-2', currentUrl), backgroundOrigin: 'content-box', padding: 10 }} />
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', fontSize: 13.5 }}>
-            <label className="btn btn-ghost" style={{ textDecoration: 'underline', textUnderlineOffset: 3, fontSize: 13.5 }}>
-              Changer la photo
-              <input id="recipe-illus" type="file" accept="image/*" hidden onChange={e => { pickImage(e.target.files?.[0], image.mode === 'new' ? image.cut : true); e.target.value = ''; }} />
-            </label>
-            <button className="btn btn-ghost" onClick={() => setImage({ mode: 'remove' })} style={{ fontSize: 13.5, textDecoration: 'underline', textUnderlineOffset: 3 }}>Enlever</button>
+            <button className="btn btn-ghost hit" onClick={() => setPhotoSheet('choice')} style={{ textDecoration: 'underline', textUnderlineOffset: 3, fontSize: 13.5 }}>Changer la photo</button>
+            <button className="btn btn-ghost hit" onClick={() => setImage({ mode: 'remove' })} style={{ fontSize: 13.5, textDecoration: 'underline', textUnderlineOffset: 3 }}>Enlever</button>
             {image.mode === 'new' && (
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, cursor: 'pointer' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, cursor: 'pointer', minHeight: 44 }}>
                 <input id="recipe-illus-cut" type="checkbox" checked={image.cut} onChange={e => pickImage(image.file, e.target.checked)} />
                 Retirer le fond et le titre
               </label>
             )}
             {image.mode !== 'keep' && initial && imgUrl(initial) && (
-              <button className="btn btn-ghost" onClick={() => setImage({ mode: 'keep' })} style={{ fontSize: 13.5, textDecoration: 'underline', textUnderlineOffset: 3 }}>Garder l'ancienne</button>
+              <button className="btn btn-ghost hit" onClick={() => setImage({ mode: 'keep' })} style={{ fontSize: 13.5, textDecoration: 'underline', textUnderlineOffset: 3 }}>Garder l'ancienne</button>
             )}
           </div>
         </div>
       ) : (
-        <label className="press" style={{ height: 120, borderRadius: 24, border: '2px dashed #A9BCAE', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, color: 'var(--color-neutral-700)', cursor: 'pointer' }}>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 7h3l2-3h6l2 3h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" /><circle cx="12" cy="13" r="4" /></svg>
+        <button className="reset press" onClick={() => setPhotoSheet('choice')} style={{ height: 120, borderRadius: 24, border: '2px dashed var(--color-field-border)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, color: 'var(--color-neutral-700)' }}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 7h3l2-3h6l2 3h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" /><circle cx="12" cy="13" r="3.5" /></svg>
           <span style={{ fontSize: 15, fontWeight: 700 }}>Ajouter une photo du plat</span>
           <span style={{ fontSize: 12.5 }}>facultatif</span>
-          <input id="recipe-illus" type="file" accept="image/*" hidden onChange={e => { pickImage(e.target.files?.[0], true); e.target.value = ''; }} />
-        </label>
+        </button>
+      )}
+      {photoSheet && (
+        <PhotoSheet step={photoSheet} setStep={setPhotoSheet}
+          recipe={{ name: form.name.trim(), cats: shownCats, ing: form.ing.split('\n').map(parseIngredient).filter(Boolean) }}
+          onGallery={() => { setPhotoSheet(null); fileRef.current?.click(); }}
+          onNeedTitle={() => { setPhotoSheet(null); setTimeout(() => document.getElementById('recipe-name')?.focus(), 50); }} />
       )}
 
       {/* Titre */}
@@ -421,5 +428,115 @@ export function CatPicker({ cats, value, onToggle, onAdd }) {
         </button>
       ))}
     </div>
+  );
+}
+
+/* ── Feuille « Photo du plat » : illustration par IA ou galerie ── */
+const SPARK = ['M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.8z', 'M19 15l.8 2.2 2.2.8-2.2.8L19 21l-.8-2.2-2.2-.8 2.2-.8z'];
+const GALLERY = ['M6 4h12a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3z', 'M9 8a2 2 0 1 0 0 4a2 2 0 1 0 0-4', 'm21 16-5-5-9 9'];
+const Ico = ({ d, size = 22, sw = 2.2 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {(Array.isArray(d) ? d : [d]).map((x, i) => <path key={i} d={x} />)}
+  </svg>
+);
+
+function PhotoSheet({ step, setStep, recipe, onGallery, onNeedTitle }) {
+  const [copied, setCopied] = useState(false);
+  const [showText, setShowText] = useState(false);
+  const close = () => setStep(null);
+  useEffect(() => {
+    const k = e => { if (e.key === 'Escape') setStep(null); };
+    window.addEventListener('keydown', k);
+    return () => window.removeEventListener('keydown', k);
+  }, [setStep]);
+  const prompt = recipe.name ? illustrationPrompt(recipe) : '';
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(prompt); setCopied(true); setTimeout(() => setCopied(false), 2500); }
+    catch { setShowText(true); }
+  };
+  const host = typeof document !== 'undefined' ? document.querySelector('.app') || document.body : null;
+  const head = { margin: 0, fontFamily: 'var(--font-heading)', fontWeight: 400, fontSize: 22 };
+  const choice = { display: 'flex', gap: 14, alignItems: 'center', padding: 16, borderRadius: 24, textAlign: 'left', width: '100%' };
+  const badge = bg => ({ width: 48, height: 48, flex: 'none', borderRadius: 16, background: bg, display: 'grid', placeItems: 'center' });
+  const num = { width: 30, height: 30, flex: 'none', borderRadius: '50%', background: 'var(--color-accent-2-200)', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-heading)', fontSize: 15 };
+  const Step = ({ n, title, text, children }) => (
+    <div style={{ display: 'flex', gap: 12 }}>
+      <span style={num} aria-hidden="true">{n}</span>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div><div style={{ fontSize: 15, fontWeight: 700 }}>{title}</div><div className="muted" style={{ fontSize: 13, lineHeight: 1.45 }}>{text}</div></div>
+        {children}
+      </div>
+    </div>
+  );
+  if (!host) return null;
+  return createPortal(
+    <div onClick={close} style={{ position: 'absolute', inset: 0, zIndex: 50, background: 'color-mix(in srgb, var(--color-neutral-900) 45%, transparent)', display: 'flex', alignItems: 'flex-end', animation: 'screen-in .15s ease-out' }}>
+      <div role="dialog" aria-modal="true" aria-label={step === 'ai' ? 'Illustration par IA' : 'Photo du plat'} onClick={e => e.stopPropagation()}
+        style={{ width: '100%', maxHeight: '90%', overflowY: 'auto', background: 'var(--color-bg)', borderRadius: '32px 32px 0 0', padding: '12px 22px', paddingBottom: 'max(26px, calc(14px + var(--bottom-safe)))', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ width: 44, height: 5, borderRadius: 999, background: 'var(--color-neutral-300)', alignSelf: 'center' }} />
+        {step === 'choice' ? (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2 style={head}>Photo du plat</h2>
+              <button className="icon-btn" onClick={close} aria-label="Fermer"><Ico d="M18 6 6 18M6 6l12 12" size={20} sw={2.75} /></button>
+            </div>
+            <button className="reset press" onClick={() => setStep('ai')} style={{ ...choice, background: 'var(--color-accent-2-100)' }}>
+              <span style={{ ...badge('var(--color-text)'), color: 'var(--color-accent-100)' }}><Ico d={SPARK} size={24} /></span>
+              <span style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
+                <span style={{ fontSize: 16, fontWeight: 700 }}>Créer une illustration avec une IA</span>
+                <span style={{ fontSize: 13, lineHeight: 1.4, color: 'var(--color-accent-2-600)' }}>Aquarelle, comme les recettes de l'app. On te donne le prompt à copier.</span>
+              </span>
+              <Ico d="m9 18 6-6-6-6" size={20} sw={2.5} />
+            </button>
+            <button className="reset press" onClick={onGallery} style={{ ...choice, background: 'var(--color-surface)', border: '1px solid var(--color-divider)' }}>
+              <span style={badge('var(--color-accent-100)')}><Ico d={GALLERY} size={24} /></span>
+              <span style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
+                <span style={{ fontSize: 16, fontWeight: 700 }}>Choisir dans ma galerie</span>
+                <span className="muted" style={{ fontSize: 13, lineHeight: 1.4 }}>Une photo de ton plat, ou une image déjà créée.</span>
+              </span>
+              <Ico d="m9 18 6-6-6-6" size={20} sw={2.5} />
+            </button>
+          </>
+        ) : (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: -10 }}>
+              <button className="icon-btn" onClick={() => setStep('choice')} aria-label="Revenir au choix"><Ico d="m15 18-6-6 6-6" size={22} sw={2.75} /></button>
+              <h2 style={head}>Illustration par IA</h2>
+            </div>
+            {!recipe.name ? (
+              <>
+                <div style={{ fontSize: 14.5, lineHeight: 1.45 }}>Écris d'abord le titre de la recette : l'IA doit savoir quel plat dessiner. Ajoute aussi les ingrédients, ils apparaîtront autour du plat.</div>
+                <button className="btn btn-primary" onClick={onNeedTitle} style={{ height: 50, fontSize: 16 }}>Écrire le titre</button>
+              </>
+            ) : (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 14, background: 'var(--color-accent-2-100)', fontSize: 13, marginTop: -6 }}>
+                  <Ico d={SPARK} size={16} /><span>Basé sur ton titre et tes ingrédients : <b>{recipe.name}</b></span>
+                </div>
+                <Step n={1} title="Copie le prompt" text="Le même que pour toutes les illustrations de l'app.">
+                  {showText ? (
+                    <textarea readOnly value={prompt} rows={6} onFocus={e => e.target.select()} aria-label="Prompt à copier"
+                      style={{ width: '100%', font: 'inherit', fontSize: 12.5, lineHeight: 1.45, color: 'var(--color-text)', background: 'var(--color-surface)', border: '1px solid var(--color-field-border)', borderRadius: 14, padding: '10px 12px' }} />
+                  ) : (
+                    <div style={{ position: 'relative', borderRadius: 16, background: 'var(--color-surface)', border: '1px solid var(--color-divider)', padding: '10px 12px', fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 11.5, lineHeight: 1.5, color: 'var(--color-accent-2-600)', height: 84, overflow: 'hidden' }}>
+                      {prompt}
+                      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 36, background: 'linear-gradient(transparent, var(--color-surface))' }} />
+                    </div>
+                  )}
+                  <button className="btn btn-secondary" onClick={copy} style={{ alignSelf: 'flex-start', minHeight: 44, padding: '0 16px', borderColor: 'var(--color-text)', background: 'var(--color-surface)' }}>
+                    <Ico d={['M11 9h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2z', 'M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1']} size={18} sw={2.4} />
+                    {copied ? 'Prompt copié !' : 'Copier le prompt'}
+                  </button>
+                </Step>
+                <Step n={2} title="Colle-le dans ton IA" text="ChatGPT, Gemini ou une autre IA qui crée des images. Enregistre l'image dans ta galerie." />
+                <Step n={3} title="Ajoute l'image" text="Le fond vert est retiré tout seul." />
+                <button className="btn btn-primary" onClick={onGallery} style={{ height: 50, fontSize: 16, gap: 8 }}><Ico d={GALLERY} size={20} />Ajouter l'image créée</button>
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </div>,
+    host,
   );
 }

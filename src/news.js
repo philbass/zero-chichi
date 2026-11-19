@@ -11,6 +11,7 @@ export const NEWS = [
         items: [
           { icon: 'send', title: 'Sauvegarder tes recettes perso', text: 'En bas de la page Catégories : un fichier avec tes recettes, tes photos et tes modifications. Tu peux le rouvrir sur un autre appareil avec « Restaurer ».' },
           { icon: 'image', title: 'Plus de place pour tes photos', text: 'Tes photos de plats sont rangées à part : tu peux en ajouter beaucoup plus. Si la place vient à manquer, l\'app te prévient au lieu de perdre ta recette.' },
+          { icon: 'sparkle', title: 'Une illustration par IA pour tes recettes', text: 'En ajoutant une photo, choisis « Créer une illustration avec une IA » : copie le prompt de l\'app, colle-le dans ChatGPT ou Gemini, puis ajoute l\'image. Le fond est retiré tout seul.', action: 'new' },
           { icon: 'pencil', title: 'Rien ne se perd pendant la saisie', text: 'Si tu quittes une recette en cours d\'écriture, l\'app te demande d\'abord confirmation.' },
         ],
       },
