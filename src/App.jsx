@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BASE, norm, fmtT, meta, plural, ingList, illus, imgUrl, portionLabel, parseDurations, addedOf, fmtDate, difficulty, totalT, waitLabel } from './lib.js';
+import { BASE, searchKey, fmtT, meta, plural, ingList, illus, imgUrl, portionLabel, parseDurations, addedOf, fmtDate, difficulty, totalT, waitLabel } from './lib.js';
 import { useTimers, StepTimer, TimerPills } from './timers.jsx';
 import { useRecipeStore, getCapability } from './store.js';
-import { CATS as CORE_CATS, RECIPES } from './data.js';
+import { CATS as CORE_CATS, RECIPES, canonId } from './data.js';
 import { usePullToRefresh, PullIndicator } from './pull.jsx';
 import { APP_URL, APP_URL_SHORT, recipeUrl, takeDeepLink, QRCode, shareLink, useInstall, installPlatform, isIPad, INSTALL_PREVIEW, recipeShareUrl, takeSharedCode, decodeSharedRecipe } from './share.jsx';
 import RecipeEditor, { CatPicker } from './RecipeEditor.jsx';
@@ -77,7 +77,8 @@ function useTablet() {
 
 // Ouverture par un lien de recette partagé (#recette=…).
 const SHARED = takeSharedCode(); // recette perso reçue (#partage=…)
-const DEEP = (() => { const id = takeDeepLink(); return RECIPES.find(r => r.id === id) || null; })();
+const DEEP_ID = takeDeepLink();
+const DEEP = DEEP_ID ? RECIPES.find(r => r.id === canonId(DEEP_ID)) || null : null;
 
 /* Nouvelles recettes depuis la dernière visite : comparées à la liste vue au lancement précédent. */
 const SEEN = 'zc:seenRecipes';
@@ -87,7 +88,7 @@ const NEW_AT_LAUNCH = (() => {
   try {
     const raw = localStorage.getItem(SEEN);
     if (!raw) { localStorage.setItem(SEEN, JSON.stringify(RECIPES.map(r => r.id))); return []; } // première visite : rien de « nouveau »
-    const seen = new Set(JSON.parse(raw));
+    const seen = new Set(JSON.parse(raw).map(canonId));
     return RECIPES.filter(r => !seen.has(r.id)).map(r => r.id);
   } catch { return []; }
 })();
@@ -98,10 +99,17 @@ export default function App() {
   const tablet = useTablet();
   const wide = !!tablet;
   const PADX = wide ? 40 : 22;
-  const { recipes, categories, addCategory, removeCategory, setCats, updateRecipe, resetRecipe, deleteRecipe } = useRecipeStore();
+  const { recipes, categories, addCategory, removeCategory, setCats, updateRecipe, resetRecipe, deleteRecipe, storageError, exportBackup, importBackup } = useRecipeStore();
   const addCat = async name => { const n = await addCategory(name).catch(() => null); if (n) flash('Catégorie « ' + n + ' » prête'); return n; };
   const byId = id => recipes.find(r => r.id === id);
-  const [sheet, setSheet] = useState(null); // { type: 'cats' | 'share', id }
+  const [sheet, setSheet] = useState(null);
+  const editorDirty = useRef(false); // recette en cours de saisie, pas encore enregistrée
+  const [leaveAsk, setLeaveAsk] = useState(false);
+  useEffect(() => {
+    const warn = e => { if (editorDirty.current) { e.preventDefault(); e.returnValue = ''; } };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, []); // { type: 'cats' | 'share', id }
   const [stack, setStack] = useState(() => (DEEP ? [{ s: 'home' }, { s: 'recipe', id: DEEP.id }] : [{ s: 'home' }]));
   /* Pastille « N nouvelles » : visible au lancement, retirée dès qu'on navigue. */
   const [newIds, setNewIds] = useState(NEW_AT_LAUNCH);
@@ -120,7 +128,7 @@ export default function App() {
   const closeOnb = () => { save('onboardingVu', true); setOnb(null); };
   const [discoverHidden, setDiscoverHidden] = useState(() => load('decouvrirMasque', false));
   const hideDiscover = () => { save('decouvrirMasque', true); setDiscoverHidden(true); flash('Tu retrouveras la vidéo dans « Quoi de neuf ? »'); };
-  const [favs, setFavs] = useState(() => load('favs', []));
+  const [favs, setFavs] = useState(() => [...new Set(load('favs', []).map(canonId))]);
   const [courses, setCourses] = useState(() => load('courses', []));
   const [q, setQ] = useState('');
   const [fTime, setFTime] = useState(0);
@@ -141,6 +149,7 @@ export default function App() {
   const depth = useRef(1);
 
   useEffect(() => { if (DEEP) history.pushState({ zc: true }, ''); }, []);
+  useEffect(() => { if (DEEP_ID && !DEEP) flashRef.current('Cette recette est introuvable', 3000); }, []);
   /* Recette perso reçue par lien : on propose de l'ajouter. */
   const receive = useCallback(async code => {
     const r = await decodeSharedRecipe(code);
@@ -153,7 +162,10 @@ export default function App() {
     const onHash = () => {
       const code = takeSharedCode();
       if (code) { receive(code); return; }
-      const id = takeDeepLink(); if (RECIPES.some(r => r.id === id)) goRef.current({ s: 'recipe', id });
+      const raw = takeDeepLink(); if (!raw) return;
+      const id = canonId(raw);
+      if (RECIPES.some(r => r.id === id)) goRef.current({ s: 'recipe', id });
+      else flashRef.current('Cette recette est introuvable', 3000);
     };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
@@ -176,6 +188,8 @@ export default function App() {
   useEffect(() => {
     const onPop = () => {
       if (skipPop.current) { skipPop.current--; return; }
+      // Saisie en cours : on reste sur la page et on demande confirmation.
+      if (editorDirty.current) { history.pushState({ zc: true }, ''); setLeaveAsk(true); return; }
       setStack(st => (st.length > 1 ? st.slice(0, -1) : st));
     };
     window.addEventListener('popstate', onPop);
@@ -189,10 +203,10 @@ export default function App() {
 
   useEffect(() => () => clearTimeout(toastT.current), []);
 
-  const flash = useCallback(msg => {
+  const flash = useCallback((msg, ms = 1600) => {
     clearTimeout(toastT.current);
     setToast(msg);
-    toastT.current = setTimeout(() => setToast(''), 1600);
+    toastT.current = setTimeout(() => setToast(''), ms);
   }, []);
   const flashRef = useRef(flash);
   const T = useTimers(flash, t => {
@@ -209,6 +223,11 @@ export default function App() {
   const goRef = useRef(go);
   goRef.current = go;
   const back = () => { if (depth.current > 1) history.back(); };
+  // Quitter la saisie sans enregistrer : on retire l'écran nous-mêmes, le retour d'historique est ignoré.
+  const leaveEditor = () => {
+    editorDirty.current = false; setLeaveAsk(false);
+    if (depth.current > 1) { skipPop.current++; history.back(); setStack(st => (st.length > 1 ? st.slice(0, -1) : st)); }
+  };
   const tab = t => {
     const extra = depth.current - 1;
     if (extra > 0) { skipPop.current++; history.go(-extra); }
@@ -277,10 +296,10 @@ export default function App() {
 
   let rows = [], listTitle = '', listSub = '', emptyTitle = '', emptyText = '', browse = false, searchInfo = '';
   if (s === 'search') {
-    const nq = norm(q.trim());
+    const nq = searchKey(q);
     browse = !nq && !fTime && !fIng;
     const res = recipes.filter(r =>
-      (!nq || norm(r.name + ' ' + r.cats.join(' ') + ' ' + r.ing.map(i => i[2]).join(' ')).includes(nq)) &&
+      (!nq || searchKey(r.name + ' ' + r.cats.join(' ') + ' ' + r.ing.map(i => i[2]).join(' ')).includes(nq)) &&
       (!fTime || totalT(r) <= fTime) && (!fIng || r.ing.length <= fIng));
     rows = browse ? [] : res;
     searchInfo = browse ? 'Ou parcours par catégorie' : plural(res.length, 'résultat');
@@ -341,7 +360,7 @@ export default function App() {
                   style={{ flex: 'none', height: 38, padding: '0 12px', borderRadius: 999, background: 'var(--color-bg)', color: 'var(--color-accent-2-800)', fontFamily: 'var(--font-heading)', fontSize: 13.5 }}>
                   Copier le lien
                 </button>
-                <button className="icon-btn" onClick={install.dismiss} aria-label="Masquer" style={{ width: 36, height: 36, color: 'var(--color-bg)' }}><CloseIcon size={16} /></button>
+                <button className="icon-btn" onClick={install.dismiss} aria-label="Masquer" style={{ width: 44, height: 44, color: 'var(--color-bg)' }}><CloseIcon size={16} /></button>
               </div>
             )}
             {install && !install.inapp && (
@@ -354,7 +373,7 @@ export default function App() {
                   style={{ flex: 'none', height: 38, padding: '0 14px', borderRadius: 999, background: 'var(--color-bg)', color: 'var(--color-accent-2-800)', fontFamily: 'var(--font-heading)', fontSize: 14 }}>
                   Installer
                 </button>
-                <button className="icon-btn" onClick={install.dismiss} aria-label="Masquer" style={{ width: 36, height: 36, color: 'var(--color-bg)' }}><CloseIcon size={16} /></button>
+                <button className="icon-btn" onClick={install.dismiss} aria-label="Masquer" style={{ width: 44, height: 44, color: 'var(--color-bg)' }}><CloseIcon size={16} /></button>
               </div>
             )}
             <div style={wide ? { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 14, alignItems: 'center' } : { display: 'contents' }}>
@@ -386,7 +405,7 @@ export default function App() {
                   </span>
                 </button>
                 <button className="icon-btn" onClick={seeNews} aria-label="Fermer « Quoi de neuf ? »"
-                  style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', width: 38, height: 38, color: 'var(--color-accent-2-800)' }}>
+                  style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', width: 44, height: 44, color: 'var(--color-accent-2-800)' }}>
                   <CloseIcon size={16} />
                 </button>
               </div>
@@ -395,13 +414,13 @@ export default function App() {
             <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
                 <h2 className="h" style={{ fontSize: 20, margin: 0 }}>Catégories</h2>
-                <button className="btn btn-ghost" onClick={() => go({ s: 'cats' })}
+                <button className="btn btn-ghost hit" onClick={() => go({ s: 'cats' })}
                   style={{ textDecoration: 'underline', textUnderlineOffset: 3, fontSize: 14, whiteSpace: 'nowrap', flex: 'none' }}>Tout voir</button>
               </div>
               <div className={(wide ? 'wrap-row' : 'hscroll') + ' cascade'} style={{ gap: 8 }}>
                 {catTiles.map(c => (
                   <button key={c.name} className="reset press" onClick={() => openCat(c.name)}
-                    style={{ flex: 'none', height: 40, padding: '0 16px', borderRadius: 999, background: c.bg, color: c.fg, fontSize: 14, fontWeight: 600 }}>
+                    style={{ flex: 'none', height: 44, padding: '0 16px', borderRadius: 999, background: c.bg, color: c.fg, fontSize: 14, fontWeight: 600 }}>
                     {c.name}
                   </button>
                 ))}
@@ -500,7 +519,7 @@ export default function App() {
               <div role="radiogroup" aria-label="Recettes à afficher" style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 999, background: 'var(--color-surface)', border: '1px solid var(--color-divider)', alignSelf: 'flex-start', maxWidth: '100%' }}>
                 {[['all', 'Toutes'], ['app', 'Zéro Chichi'], ['mine', 'Mes recettes']].map(([k, l]) => (
                   <button key={k} role="radio" aria-checked={src === k} className="reset" onClick={() => setSrc(k)}
-                    style={{ height: 36, padding: '0 14px', borderRadius: 999, fontSize: 13.5, fontWeight: 700, whiteSpace: 'nowrap', transition: 'background-color .15s, color .15s',
+                    style={{ height: 44, padding: '0 14px', borderRadius: 999, fontSize: 13.5, fontWeight: 700, whiteSpace: 'nowrap', transition: 'background-color .15s, color .15s',
                       background: src === k ? 'var(--color-text)' : 'transparent', color: src === k ? 'var(--color-bg)' : 'var(--color-text)' }}>
                     {l}
                   </button>
@@ -519,7 +538,7 @@ export default function App() {
                 type="search" enterKeyHint="search" aria-label="Rechercher une recette"
                 style={{ flex: 1, minWidth: 0, border: 'none', background: 'transparent', font: 'inherit', fontSize: 16, color: 'var(--color-text)', outline: 'none', WebkitAppearance: 'none' }} />
               {q && (
-                <button className="reset" onClick={() => { setQ(''); inputRef.current?.focus(); }} aria-label="Effacer"
+                <button className="reset hit" onClick={() => { setQ(''); inputRef.current?.focus(); }} aria-label="Effacer"
                   style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--color-neutral-300)', display: 'grid', placeItems: 'center' }}>
                   <CloseIcon size={14} />
                 </button>
@@ -550,6 +569,11 @@ export default function App() {
                 <span style={{ fontSize: 22, fontWeight: 700, lineHeight: 1 }}>+</span>
               </button>
             )}
+          </div>
+        )}
+        {s === 'cats' && (
+          <div style={{ padding: `0 ${PADX}px 32px` }}>
+            <BackupCard exportBackup={exportBackup} importBackup={importBackup} flash={flash} />
           </div>
         )}
 
@@ -603,21 +627,26 @@ export default function App() {
         {/* ── Nouvelle recette / modification ── */}
         {isEditor && (
           <div style={wide ? { maxWidth: 760, margin: '0 auto' } : { display: 'contents' }}>
-          <RecipeEditor key={top.id || 'new'} initial={s === 'edit' ? byId(top.id) : null} cats={categories} onAddCat={addCat} onBack={back}
+          <RecipeEditor key={top.id || 'new'} initial={s === 'edit' ? byId(top.id) : null} cats={categories} onAddCat={addCat}
+            onBack={() => (editorDirty.current ? setLeaveAsk(true) : back())} onDirty={d => { editorDirty.current = d; }}
             onSave={async (fields, image) => {
               const orig = s === 'edit' ? byId(top.id) : null;
-              const id = await updateRecipe(orig, fields, image).catch(() => null);
-              if (!id) { flash('Enregistrement impossible, réessaie'); return false; }
+              let full = false;
+              const id = await updateRecipe(orig, fields, image).catch(err => { full = err?.message === 'storage-full'; return null; });
+              if (!id) { flash(full ? 'Plus de place sur cet appareil : rien n\'est enregistré' : 'Enregistrement impossible, réessaie', full ? 4000 : undefined); return false; }
+              editorDirty.current = false;
               flash(orig ? 'Recette modifiée' : 'Recette ajoutée');
               if (orig) back();
               else { setStack(st => [...st.slice(0, -1), { s: 'recipe', id }]); setPortions(fields.p); }
               return true;
             }}
             onReset={async id => {
+              editorDirty.current = false;
               await resetRecipe(id).catch(() => {});
               flash("Recette d'origine rétablie"); back();
             }}
             onDelete={async id => {
+              editorDirty.current = false;
               await deleteRecipe(id).catch(() => {});
               setFavs(f => f.filter(x => x !== id));
               tab('home'); flash('Recette supprimée');
@@ -709,6 +738,15 @@ export default function App() {
       )}
       {isRecipe && <PrintSheet r={recipe} portions={portions} />}
       {onb && <Onboarding first={onb === 'first'} onClose={closeOnb} />}
+      {leaveAsk && (
+        <Sheet title="Quitter sans enregistrer ?" onClose={() => setLeaveAsk(false)}>
+          <div className="muted" style={{ fontSize: 14.5, lineHeight: 1.45, marginTop: -6 }}>Ce que tu as écrit sera perdu.</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <button className="btn btn-primary" autoFocus onClick={() => setLeaveAsk(false)} style={{ height: 50, fontSize: 16 }}>Continuer la saisie</button>
+            <button className="btn btn-secondary" onClick={leaveEditor} style={{ height: 50, fontSize: 16, color: 'var(--color-error)' }}>Quitter sans enregistrer</button>
+          </div>
+        </Sheet>
+      )}
       {sheet?.type === 'app' && <AppShareSheet onClose={() => setSheet(null)} flash={flash} />}
       {sheet?.type === 'install' && <InstallGuide onClose={() => setSheet(null)} flash={flash} />}
       {sheet?.type === 'voice' && <VoiceSheet onClose={() => setSheet(null)} />}
@@ -719,8 +757,9 @@ export default function App() {
           onOpen={x => { setSheet(null); go({ s: 'recipe', id: x.id }); }}
           onAdd={async () => {
             const r = sheet.r;
-            const id = await updateRecipe(null, { ...r, cats: r.cats.filter(c => categories.includes(c)), shared: true }).catch(() => null);
-            if (!id) { flash('Ajout impossible, réessaie'); return; }
+            let full = false;
+            const id = await updateRecipe(null, { ...r, cats: r.cats.filter(c => categories.includes(c)), shared: true }).catch(err => { full = err?.message === 'storage-full'; return null; });
+            if (!id) { flash(full ? 'Plus de place sur cet appareil : recette non ajoutée' : 'Ajout impossible, réessaie', full ? 4000 : undefined); return; }
             setSheet(null);
             history.pushState({ zc: true }, '');
             setStack(st => [...st, { s: 'recipe', id }]); setPortions(r.p);
@@ -740,6 +779,13 @@ export default function App() {
       {confetti && <Confetti onEnd={() => setConfetti(false)} />}
 
       {toast && <div key={toast} className="toast" role="status">{toast}</div>}
+
+      {storageError && !isCook && !isEditor && (
+        <div role="alert" style={{ position: 'absolute', left: 12, right: 12, bottom: 'calc(var(--tabbar-h, 84px) + 10px)', zIndex: 60, display: 'flex', alignItems: 'center', gap: 10, padding: '10px 10px 10px 16px', borderRadius: 20, background: 'var(--color-error)', color: '#fff', fontSize: 13, lineHeight: 1.35, boxShadow: '0 6px 20px rgba(0,0,0,.18)' }}>
+          <span style={{ flex: 1 }}>Plus de place sur cet appareil : tes derniers changements ne sont pas enregistrés. Sauvegarde tes recettes perso.</span>
+          <button className="reset press" onClick={() => go({ s: 'cats' })} style={{ flex: 'none', minHeight: 44, padding: '0 14px', borderRadius: 999, background: '#fff', color: '#7A2E1E', fontWeight: 700, fontSize: 13 }}>Sauvegarder</button>
+        </div>
+      )}
 
       {/* ── Onglets ── */}
       {!isRecipe && !isEditor && (
@@ -768,6 +814,58 @@ export default function App() {
 }
 
 /* ── composants ─────────────────────────────────────────── */
+/* Sauvegarde et restauration des recettes perso (fichier .json, photos comprises). */
+function BackupCard({ exportBackup, importBackup, flash }) {
+  const fileRef = useRef(null);
+  const [busy, setBusy] = useState(false);
+  const doExport = async () => {
+    setBusy(true);
+    try {
+      const data = await exportBackup();
+      const n = Object.keys(data.custom).length;
+      const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+      const name = 'zero-chichi-sauvegarde-' + new Date().toISOString().slice(0, 10) + '.json';
+      const file = new File([blob], name, { type: 'application/json' });
+      if (navigator.canShare?.({ files: [file] }) && matchMedia('(pointer: coarse)').matches) {
+        await navigator.share({ files: [file], title: 'Sauvegarde Zéro Chichi' }).catch(() => {});
+      } else {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = name;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      }
+      flash(n ? 'Sauvegarde prête (' + plural(n, 'recette') + ')' : 'Sauvegarde prête');
+    } catch { flash('Sauvegarde impossible, réessaie'); }
+    setBusy(false);
+  };
+  const doImport = async e => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    setBusy(true);
+    try {
+      const n = await importBackup(JSON.parse(await f.text()));
+      flash(n ? plural(n, 'recette') + ' perso restaurée' + (n > 1 ? 's' : '') : 'Sauvegarde restaurée', 2500);
+    } catch (err) {
+      flash(err?.message === 'storage-full' ? 'Plus de place sur cet appareil' : 'Ce fichier n\'est pas une sauvegarde Zéro Chichi', 3000);
+    }
+    setBusy(false);
+  };
+  return (
+    <div style={{ padding: 16, borderRadius: 24, background: 'var(--color-surface)', border: '1px solid var(--color-divider)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div>
+        <div className="h" style={{ fontSize: 16 }}>Sauvegarder tes recettes perso</div>
+        <div className="muted" style={{ fontSize: 13, marginTop: 2, lineHeight: 1.4 }}>Un fichier avec tes recettes, tes photos et tes modifications. Garde-le au chaud, ou ouvre-le sur un autre appareil.</div>
+      </div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button className="btn btn-primary" disabled={busy} onClick={doExport} style={{ minHeight: 44, padding: '0 18px' }}>Sauvegarder</button>
+        <button className="btn btn-secondary" disabled={busy} onClick={() => fileRef.current?.click()} style={{ minHeight: 44, padding: '0 18px' }}>Restaurer</button>
+        <input ref={fileRef} type="file" accept=".json,application/json" onChange={doImport} hidden />
+      </div>
+    </div>
+  );
+}
+
 function FakeStatus() {
   return (
     <div className="statusbar-fake" aria-hidden="true">
@@ -790,8 +888,8 @@ function ChipRow({ label, options, value, onChange, render }) {
       {options.map(m => {
         const on = value === m;
         return (
-          <button key={m} className="reset" aria-pressed={on} onClick={() => onChange(on ? 0 : m)}
-            style={{ height: 34, padding: '0 13px', borderRadius: 999, border: `1px solid ${on ? 'var(--color-text)' : 'var(--color-divider)'}`, background: on ? 'var(--color-text)' : 'transparent', color: on ? 'var(--color-bg)' : 'var(--color-text)', fontSize: 13, fontWeight: 600, transition: 'background-color .15s, color .15s' }}>
+          <button key={m} className="reset hit" aria-pressed={on} onClick={() => onChange(on ? 0 : m)}
+            style={{ height: 38, padding: '0 13px', borderRadius: 999, border: `1px solid ${on ? 'var(--color-text)' : 'var(--color-divider)'}`, background: on ? 'var(--color-text)' : 'transparent', color: on ? 'var(--color-bg)' : 'var(--color-text)', fontSize: 13, fontWeight: 600, transition: 'background-color .15s, color .15s' }}>
             {render(m)}
           </button>
         );
@@ -828,7 +926,7 @@ function RecipeView({ r, land, wide, onVoice, fav, portions, setPortions, onBack
         <span className={'tag ' + ({ Facile: 'tag-accent-2', Moyen: 'tag-accent', Long: 'tag-neutral' })[difficulty(r)]}>{difficulty(r)}</span>
         <SeasonTag r={r} />
         {r.cats.map(c => <span key={c} className="tag tag-neutral">{c}</span>)}
-        <button className="reset tag" onClick={onCats} aria-label="Modifier les catégories"
+        <button className="reset tag hit" onClick={onCats} aria-label="Modifier les catégories"
           style={{ border: '1px dashed var(--color-neutral-500)', gap: 4, cursor: 'pointer' }}>
           <Icon d={PENCIL} size={12} sw={2.5} />Catégories
         </button>
@@ -837,7 +935,7 @@ function RecipeView({ r, land, wide, onVoice, fav, portions, setPortions, onBack
       <ListenBar r={r} portions={portions} onSettings={onVoice} />
       <MacrosCard r={r} />
       {onEdit && (
-        <button className="btn btn-ghost" onClick={onEdit} style={{ alignSelf: 'flex-start', textDecoration: 'underline', textUnderlineOffset: 3, fontSize: 14, marginTop: -2 }}>
+        <button className="btn btn-ghost hit" onClick={onEdit} style={{ alignSelf: 'flex-start', textDecoration: 'underline', textUnderlineOffset: 3, fontSize: 14, marginTop: -2 }}>
           Modifier la recette
         </button>
       )}
@@ -978,7 +1076,7 @@ function ListenBar({ r, portions, onSettings }) {
   useEffect(() => { stopSpeaking(); setSt(null); }, [r.id, portions]);
   if (!canSpeak) return null;
   const active = st && st.index >= 0;
-  const btn = { height: 40, borderRadius: 999, display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 700 };
+  const btn = { height: 44, borderRadius: 999, display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 700 };
   return (
     <div style={{ marginTop: 2, padding: 8, borderRadius: 22, background: 'var(--color-accent-2-100)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
       {!active ? (
@@ -1001,7 +1099,7 @@ function ListenBar({ r, portions, onSettings }) {
       <div style={{ flex: 1, minWidth: 80, fontSize: 12.5, color: 'var(--color-accent-2-800)', fontWeight: 600 }}>
         {active ? (st.paused ? 'En pause' : 'Lecture en cours') + ' · ' + Math.round(((st.index + 1) / st.total) * 100) + ' %' : 'Ingrédients et étapes lus à voix haute'}
       </div>
-      <button className="icon-btn" onClick={onSettings} aria-label="Réglages de lecture" style={{ width: 40, height: 40, color: 'var(--color-accent-2-800)' }}>
+      <button className="icon-btn" onClick={onSettings} aria-label="Réglages de lecture" style={{ width: 44, height: 44, color: 'var(--color-accent-2-800)' }}>
         <Icon d={SLIDERS} size={18} sw={2.4} />
       </button>
     </div>
@@ -1043,7 +1141,7 @@ function VoiceSheet({ onClose }) {
       <label htmlFor="zc-voice" style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13, fontWeight: 700, color: 'var(--color-neutral-700)' }}>
         Voix
         <select id="zc-voice" value={current} onChange={e => setVoice({ voice: e.target.value })}
-          style={{ font: 'inherit', fontSize: 15, fontWeight: 500, color: 'var(--color-text)', background: 'var(--color-surface)', border: '1px solid var(--color-divider)', borderRadius: 14, padding: '10px 12px' }}>
+          style={{ font: 'inherit', fontSize: 16, fontWeight: 500, color: 'var(--color-text)', background: 'var(--color-surface)', border: '1px solid var(--color-field-border)', borderRadius: 14, padding: '10px 12px' }}>
           {voices.length === 0 && <option value="">Voix de l'appareil</option>}
           {voices.map(v => <option key={v.voiceURI} value={v.voiceURI}>{v.name}{voiceRegion(v) ? ' · ' + voiceRegion(v) : ''}{v.localService ? '' : ' · en ligne'}</option>)}
         </select>
@@ -1091,8 +1189,8 @@ function MacrosCard({ r }) {
 
 function StepperBtn({ label, d, onClick }) {
   return (
-    <button className="reset press" onClick={onClick} aria-label={label}
-      style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--color-bg)', display: 'grid', placeItems: 'center' }}>
+    <button className="reset press hit" onClick={onClick} aria-label={label}
+      style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--color-bg)', display: 'grid', placeItems: 'center' }}>
       <Icon d={d} size={16} />
     </button>
   );
@@ -1126,7 +1224,7 @@ function CookView({ r, onVoice, wide, portions, step, setStep, onClose, onDone, 
   }, []);
 
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 20, background: 'var(--color-accent-2-700)', color: 'var(--color-bg)', padding: wide ? '28px 40px' : '24px 24px 34px', paddingTop: `calc(${wide ? 28 : 12}px + var(--status-h))`, paddingBottom: 'max(34px, calc(14px + var(--bottom-safe)))', display: 'flex', gap: 40 }}>
+    <div data-dark style={{ position: 'absolute', inset: 0, zIndex: 20, background: 'var(--color-accent-2-700)', color: 'var(--color-bg)', padding: wide ? '28px 40px' : '24px 24px 34px', paddingTop: `calc(${wide ? 28 : 12}px + var(--status-h))`, paddingBottom: 'max(34px, calc(14px + var(--bottom-safe)))', display: 'flex', gap: 40 }}>
       {wide && (
         <aside style={{ width: 300, flex: 'none', alignSelf: 'stretch', overflowY: 'auto', scrollbarWidth: 'none', borderRadius: 28, background: 'var(--color-accent-2-800)', padding: '22px 22px 12px', display: 'flex', flexDirection: 'column' }}>
           <div className="h" style={{ fontSize: 22, marginBottom: 2 }}>Ingrédients</div>
@@ -1312,7 +1410,7 @@ function ShareSheet({ r, portions, onClose, flash }) {
       )}
       <div className="muted" style={{ fontSize: 12.5, marginTop: -4, textAlign: 'center' }}>
         {r.custom
-          ? "Ton ami reçoit un lien pour l'ajouter à son app d'un geste." + (r.imgAsset || r.imgData ? ' Ta photo ne voyage pas avec le lien.' : '')
+          ? "Ton ami reçoit un lien pour l'ajouter à son app d'un geste." + (r.imgAsset || r.imgData || r.imgIdb ? ' Ta photo ne voyage pas avec le lien.' : '')
           : "Le lien ouvre la recette dans l'app, avec les minuteurs et la liste de courses."}
       </div>
     </Sheet>

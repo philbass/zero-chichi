@@ -141,8 +141,8 @@ export default function Onboarding({ first, onClose }) {
       {hint && !blocked && !ended && <div className="onboarding-hint" aria-hidden="true">Touche ou glisse pour avancer · Appui long : pause</div>}
 
       {blocked && !ended && (
-        <button className="reset onboarding-play" onClick={() => seek(ref.current?.currentTime || 0)} aria-label="Lire la vidéo">
-          <Svg d={PLAY} size={34} fill="currentColor" sw={0} />
+        <button className="reset press onboarding-play" onClick={() => seek(ref.current?.currentTime || 0)}>
+          <Svg d={PLAY} size={22} fill="currentColor" sw={0} />Voir la visite (45 s)
         </button>
       )}
 

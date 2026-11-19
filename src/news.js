@@ -2,6 +2,27 @@
 // Les nouvelles recettes sont retrouvées automatiquement grâce à leur date d'ajout (champ `added`).
 export const NEWS = [
   {
+    id: '2026-11-20-sauvegarde',
+    date: '2026-11-20',
+    title: 'Tes recettes perso en sécurité',
+    groups: [
+      {
+        name: 'Nouveau',
+        items: [
+          { icon: 'send', title: 'Sauvegarder tes recettes perso', text: 'En bas de la page Catégories : un fichier avec tes recettes, tes photos et tes modifications. Tu peux le rouvrir sur un autre appareil avec « Restaurer ».' },
+          { icon: 'image', title: 'Plus de place pour tes photos', text: 'Tes photos de plats sont rangées à part : tu peux en ajouter beaucoup plus. Si la place vient à manquer, l\'app te prévient au lieu de perdre ta recette.' },
+          { icon: 'pencil', title: 'Rien ne se perd pendant la saisie', text: 'Si tu quittes une recette en cours d\'écriture, l\'app te demande d\'abord confirmation.' },
+        ],
+      },
+    ],
+    fixes: [
+      'La recherche trouve « oeuf », « boeuf » ou « chou fleur », même sans « œ » ni tiret.',
+      '« Coller une recette entière » te dit ce qu\'il n\'a pas reconnu, et passe les étapes au tutoiement.',
+      'Boutons plus faciles à toucher, champs mieux visibles, et plus de zoom sur iPhone quand tu écris.',
+      'Huit recettes ont des étapes plus courtes.',
+    ],
+  },
+  {
     id: '2026-11-17-impression',
     date: '2026-11-17',
     title: 'Imprimer une recette',

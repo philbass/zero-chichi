@@ -3,6 +3,8 @@
 export const BASE = import.meta.env?.BASE_URL ?? "./";
 
 export const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+// Pour la recherche : « oeuf » trouve « œuf », « chou fleur » trouve « chou-fleur ».
+export const searchKey = s => norm(s).replace(/œ/g, 'oe').replace(/æ/g, 'ae').replace(/[-‐–—’'_/]+/g, ' ').replace(/\s+/g, ' ').trim();
 export const fmt = n => String(Math.round(n * 10) / 10).replace('.', ',');
 export const fmtT = t => { if (t < 60) return t + ' min'; const h = Math.floor(t / 60), m = t % 60; return h + ' h' + (m ? ' ' + m : ''); };
 // Temps d'attente sans rien faire (marinade, repos, au frais…) : r.wait = [minutes, 'type'].
@@ -30,7 +32,7 @@ export const ingList = (r, portions) => {
   }));
 };
 
-export const imgUrl = r => (r.imgData ? r.imgData
+export const imgUrl = r => (r.imgLocal ? r.imgLocal : r.imgData ? r.imgData
   : r.imgAsset ? '/_blob/' + r.imgAsset
   : r.img ? `${BASE}assets/illus/${r.img.includes('.') ? r.img : r.img + '.png'}` : null);
 // Illustration par défaut (ustensiles sur une planche) pour les recettes sans image.
@@ -111,6 +113,19 @@ function minutesIn(t) {
   return m;
 }
 
+// Passe le premier verbe d'une étape du vouvoiement au tutoiement : « Préchauffez » → « Préchauffe ».
+const TU = { faites: 'fais', mettez: 'mets', remettez: 'remets', prenez: 'prends', reprenez: 'reprends', battez: 'bats', servez: 'sers',
+  cuisez: 'cuis', sortez: 'sors', couvrez: 'couvre', recouvrez: 'recouvre', ouvrez: 'ouvre', attendez: 'attends', dites: 'dis',
+  rendez: 'rends', fondez: 'fonds', tendez: 'tends', étendez: 'étends', répandez: 'répands' };
+const ISSEZ_1ER_GROUPE = /^(laiss|délaiss|gliss|pliss|hiss|tapiss|pass)ez$/; // « Laissez » → « Laisse », pas « Lais »
+export const tutoie = step => step.replace(/^([A-Za-zÀ-ÿ]+(?:ez|tes))\b/, w => {
+  const low = w.toLowerCase();
+  let out = TU[low];
+  if (!out && /ez$/.test(low) && low.length > 4 && !/^(assez|chez)$/.test(low)) out = /issez$/.test(low) && !ISSEZ_1ER_GROUPE.test(low) ? low.slice(0, -4) + 's' : low.slice(0, -1);
+  if (!out) return w;
+  return w[0] === w[0].toUpperCase() ? out.charAt(0).toUpperCase() + out.slice(1) : out;
+});
+
 export function parseRecipeText(text) {
   const lines = text.split(/\r?\n/).map(l => l.replace(/\*\*|__|^#+\s*/g, '').trim()).filter(Boolean);
   const name = cleanLine(lines[0] || 'Nouvelle recette').replace(/^titre\s*:\s*/i, '').replace(/\s*[:–-]\s*$/, '');
@@ -136,7 +151,7 @@ export function parseRecipeText(text) {
     if (pm) p = +pm[1];
     if (!tSet) for (const tm of low.matchAll(/(?:preparation|cuisson|temps)[^0-9]*(\d+)\s*(h|min|mn)/g)) t += tm[2] === 'h' ? +tm[1] * 60 : +tm[1];
     if (/^ingredients?\b/.test(low)) { mode = 'ing'; continue; }
-    if (/^(preparation|instructions?|etapes?|recette)\b/.test(low) && l.length < 40) { mode = 'steps'; continue; }
+    if (/^(preparation|instructions?|etapes?|recette|methode|method|directions?|steps?|deroulement)\b/.test(low) && l.length < 40) { mode = 'steps'; continue; }
     if (/^#/.test(l) || !l) continue;
     if (mode === 'ing') { if (l.length < 90 && !/:$/.test(l)) { const x = parseIngredient(l); if (x) ing.push(x); } }
     else if (mode === 'steps') { if (l.length > 3 && !/:$/.test(l)) steps.push(l); }
@@ -152,7 +167,7 @@ export function parseRecipeText(text) {
       else steps.push(...splitSteps(l));
     }
   }
-  const r = { name, cats, t: t || 30, p, ing, steps: steps.flatMap(splitSteps), notes: tSet ? [] : ['Mise en forme simple : vérifie les quantités et raccourcis les étapes si besoin.'] };
+  const r = { name, cats, t: t || 30, p, ing, steps: steps.flatMap(splitSteps).map(tutoie), notes: tSet ? [] : ['Mise en forme simple : vérifie les quantités et raccourcis les étapes si besoin.'] };
   if (wait) r.wait = wait;
   if (tip.length) r.tip = tip.join('\n');
   return r;
