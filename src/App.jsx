@@ -4,7 +4,8 @@ import { useTimers, StepTimer, TimerPills } from './timers.jsx';
 import { useRecipeStore, getCapability } from './store.js';
 import { CATS as CORE_CATS, RECIPES, canonId } from './data.js';
 import { usePullToRefresh, PullIndicator } from './pull.jsx';
-import { APP_URL, APP_URL_SHORT, recipeUrl, takeDeepLink, QRCode, shareLink, useInstall, installPlatform, isIPad, INSTALL_PREVIEW, recipeShareUrl, takeSharedCode, decodeSharedRecipe } from './share.jsx';
+import { recipeShortUrl } from './shortLink.js';
+import { APP_URL, APP_URL_SHORT, recipeUrl, takeDeepLink, QRCode, shareLink, useInstall, installPlatform, isIPad, INSTALL_PREVIEW, takeSharedCode, decodeSharedRecipe } from './share.jsx';
 import RecipeEditor, { CatPicker } from './RecipeEditor.jsx';
 import { renderRecipeCard, cardFilename } from './shareCard.js';
 import { macros } from './nutrition.js';
@@ -1335,6 +1336,14 @@ function ShareSheet({ r, portions, onClose, flash }) {
   const [img, setImg] = useState(null); // { blob, url }
   const [busy, setBusy] = useState(false);
   const [hint, setHint] = useState('');
+  // Recette perso : le lien court est préparé dès l'ouverture, pour que le partage parte d'un geste.
+  const [link, setLink] = useState(null);
+  useEffect(() => {
+    if (!r.custom) return;
+    let alive = true;
+    recipeShortUrl(r).then(u => { if (alive) setLink(u); });
+    return () => { alive = false; };
+  }, [r]);
 
   useEffect(() => {
     let url, alive = true;
@@ -1389,13 +1398,12 @@ function ShareSheet({ r, portions, onClose, flash }) {
       </button>
       {r.custom && (
         <button className="btn btn-secondary" onClick={async () => {
-          const url = await recipeShareUrl(r);
-          const res = await shareLink({ title: r.name, text: `Je t'envoie ma recette « ${r.name} ». Ouvre le lien pour l'ajouter à ton app Zéro Chichi :`, url });
+          const res = await shareLink({ title: r.name, text: `Je t'envoie ma recette « ${r.name} ». Ouvre le lien pour l'ajouter à ton app Zéro Chichi :`, url: link });
           if (res === 'shared') onClose();
           else if (res === 'copied') { flash('Lien copié'); onClose(); }
           else if (res === 'failed') setHint("Partage impossible ici. Essaie depuis l'app installée.");
-        }} style={{ height: 50, fontSize: 15, marginTop: -6 }}>
-          Envoyer la recette à un ami
+        }} disabled={!link} style={{ height: 50, fontSize: 15, marginTop: -6 }}>
+          {link ? 'Envoyer la recette à un ami' : 'Préparation du lien…'}
         </button>
       )}
       {!r.custom && (

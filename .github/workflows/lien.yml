@@ -1,0 +1,21 @@
+# Met en ligne le service de liens courts (dossier worker/) sur Cloudflare.
+# Secrets du dépôt nécessaires : CLOUDFLARE_API_TOKEN et CLOUDFLARE_ACCOUNT_ID.
+name: Publier les liens courts (Cloudflare)
+on:
+  push:
+    branches: [main]
+    paths: ['worker/**', '.github/workflows/lien.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: worker
+          command: deploy

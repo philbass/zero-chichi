@@ -6,7 +6,8 @@ export const APP_URL = 'https://philbass.github.io/zero-chichi/';
 export const APP_URL_SHORT = 'philbass.github.io/zero-chichi';
 
 /** Lien direct vers une recette du livre (une recette perso n'existe que sur l'appareil qui l'a ajoutée). */
-export const recipeUrl = r => (r && !r.custom ? APP_URL + '#recette=' + encodeURIComponent(r.id) : APP_URL);
+// Recette du catalogue : page à son nom (dist/r/<id>/, voir pages-recettes.mjs), avec aperçu illustré.
+export const recipeUrl = r => (r && !r.custom ? APP_URL + 'r/' + encodeURIComponent(r.id) : APP_URL);
 
 /** Identifiant de recette demandé par le lien d'ouverture (#recette=…), puis on nettoie l'adresse. */
 export function takeDeepLink() {

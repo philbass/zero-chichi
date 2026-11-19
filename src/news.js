@@ -2,6 +2,20 @@
 // Les nouvelles recettes sont retrouvées automatiquement grâce à leur date d'ajout (champ `added`).
 export const NEWS = [
   {
+    id: '2026-11-20-liens',
+    date: '2026-11-20',
+    title: 'Des liens de recette courts',
+    groups: [
+      {
+        name: 'Nouveau',
+        items: [
+          { icon: 'link', title: 'Tes recettes perso, en lien court', text: '« Envoyer la recette à un ami » donne maintenant un lien d\'une quarantaine de caractères, au lieu de plusieurs centaines.' },
+          { icon: 'share', title: 'Un aperçu illustré', text: 'Le lien d\'une recette Zéro Chichi est plus lisible (…/r/crepes) et s\'affiche avec son illustration dans WhatsApp, SMS ou mail.' },
+        ],
+      },
+    ],
+  },
+  {
     id: '2026-11-20-sauvegarde',
     date: '2026-11-20',
     title: 'Tes recettes perso en sécurité',
