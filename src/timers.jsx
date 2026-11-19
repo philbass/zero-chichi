@@ -87,7 +87,7 @@ function Clock({ size = 18 }) {
   );
 }
 
-const roundBtn = { width: 40, height: 40, flex: 'none', borderRadius: '50%', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 13 };
+const roundBtn = { width: 44, height: 44, flex: 'none', borderRadius: '50%', display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 13 };
 
 /** Le minuteur d'une étape, sur le fond vert du mode cuisine. */
 export function StepTimer({ d, timer, T }) {
@@ -139,8 +139,8 @@ export function TimerPills({ timers, T, onOpen, dark }) {
   return (
     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: dark ? 'flex-start' : 'center' }}>
       {timers.map(t => (
-        <button key={t.id} className="reset press" onClick={() => onOpen(t)}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 12px', borderRadius: 999, fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums',
+        <button key={t.id} className="reset press hit" onClick={() => onOpen(t)}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 12px', borderRadius: 999, fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums',
             background: t.done ? 'var(--color-accent)' : dark ? 'var(--color-accent-2-600)' : 'var(--color-text)',
             color: t.done ? 'var(--color-text)' : 'var(--color-bg)', boxShadow: dark ? 'none' : 'var(--shadow-md)',
             animation: t.done ? 'timer-pulse 1s ease-in-out infinite' : 'none' }}>

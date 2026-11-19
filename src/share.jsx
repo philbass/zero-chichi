@@ -133,7 +133,7 @@ export async function recipeShareUrl(r) {
   if (r.wait) data.w = r.wait;
   if (r.yield) data.y = r.yield;
   if (r.tip) data.a = r.tip;
-  if (r.img && !r.imgAsset && !r.imgData) data.im = r.img;
+  if (r.img && !r.imgAsset && !r.imgData && !r.imgIdb) data.im = r.img;
   const raw = new TextEncoder().encode(JSON.stringify(data));
   let code;
   try { code = 'z' + b64url(await pipe(raw, CompressionStream, 'deflate-raw')); } catch { code = 'j' + b64url(raw); }

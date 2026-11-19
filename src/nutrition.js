@@ -151,7 +151,8 @@ const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const RX = FOODS.map(f => f[0].map(k => new RegExp('(^|[^a-z])' + esc(k) + '(s|x)?(?![a-z])')));
 function findFood(name) {
   const n = clean(name);
-  if (/\(option|\(decor/.test(n)) return { skip: true };
+  // Ingrédients facultatifs, de décor, ou de saumure (rincée, donc pas mangée).
+  if (/\(option|\(decor|\(saumure/.test(n)) return { skip: true };
   for (let i = 0; i < FOODS.length; i++) if (RX[i].some(rx => rx.test(n))) return { food: FOODS[i] };
   return null;
 }
