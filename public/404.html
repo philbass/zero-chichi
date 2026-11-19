@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Zéro Chichi</title>
+<script>
+  // Lien de recette sans page (recette publiée depuis la dernière mise en ligne) : on ouvre l'app sur la recette.
+  var m = location.pathname.match(/^(.*?\/zero-chichi\/)r\/([a-z0-9-]+)\/?$/);
+  location.replace(m ? m[1] + '#recette=' + m[2] : '/zero-chichi/');
+</script>
+</head><body style="margin:0;background:#FBF6EA"></body></html>

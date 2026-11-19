@@ -1,0 +1,10 @@
+# Liens courts pour les recettes perso partagées : https://lien.zero-chichi.workers.dev/<code>
+# Mis en ligne automatiquement par .github/workflows/lien.yml à chaque envoi sur main qui touche ce dossier.
+name = "lien"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+workers_dev = true
+
+[[kv_namespaces]]
+binding = "PARTAGES"
+id = "c429eff2a7a2499fab830c03da34fcdb"
