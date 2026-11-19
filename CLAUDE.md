@@ -47,7 +47,7 @@ en plus de React : `qrcode-generator`. `vite.config.js` utilise `base: './'` (ch
 | `src/stats.js` | Statistiques GoatCounter (`zerochichi`), actives seulement sur `philbass.github.io` |
 | `src/imageTools.js` | Détourage des illustrations (partagé avec le script d'illustration) |
 | `public/sw.js` | Service worker hors ligne (cache `zero-chichi-vN`) |
-| `src/shortLink.js` + `worker/` | Liens courts des recettes perso : service Cloudflare `lien.zero-chichi.workers.dev` (KV `PARTAGES`, recettes gardées un an), mis en ligne par `.github/workflows/lien.yml` (secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`). Sans réponse en 4 s, l'app garde le lien long. |
+| `src/shortLink.js` + `worker/` | Liens courts des recettes perso : service Cloudflare `lien.philbass.workers.dev` (KV `PARTAGES`, recettes gardées un an), mis en ligne par `.github/workflows/lien.yml` (secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`). Sans réponse en 4 s, l'app garde le lien long. |
 | `pages-recettes.mjs` | Au build : une page par recette publiée (`dist/r/<id>/`, aperçu illustré `og.jpg`) qui ouvre `#recette=<id>` ; `public/404.html` rattrape les recettes publiées depuis le dernier build. |
 
 ## Ajouter une recette
