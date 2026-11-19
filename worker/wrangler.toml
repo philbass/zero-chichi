@@ -1,4 +1,4 @@
-# Liens courts pour les recettes perso partagées : https://lien.zero-chichi.workers.dev/<code>
+# Liens courts pour les recettes perso partagées : https://lien.philbass.workers.dev/<code>
 # Mis en ligne automatiquement par .github/workflows/lien.yml à chaque envoi sur main qui touche ce dossier.
 name = "lien"
 main = "src/index.js"

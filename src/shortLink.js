@@ -1,8 +1,8 @@
 import { recipeShareUrl } from './share.jsx';
 
-/* Lien court (service Cloudflare, dossier worker/) : https://lien.zero-chichi.workers.dev/Ab3dE7f.
+/* Lien court (service Cloudflare, dossier worker/) : https://lien.philbass.workers.dev/Ab3dE7f.
    Si le service ne répond pas vite, on garde le lien long : le partage ne bloque jamais. */
-const SHORT_LINK_API = 'https://lien.zero-chichi.workers.dev/';
+const SHORT_LINK_API = 'https://lien.philbass.workers.dev/';
 export async function recipeShortUrl(r) {
   const long = await recipeShareUrl(r);
   const code = long.split('#partage=')[1];
