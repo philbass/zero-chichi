@@ -31,6 +31,7 @@ const FOODS = [
   [['travers de porc'], 190, 12, 0, 16], // poids avec os
   [['chair a saucisse'], 300, 14, 1, 27],
   [['lardons', 'lard fume', 'lard ou chorizo'], 300, 15, 0.5, 27],
+  [['bacon'], 130, 21, 1, 5], // bacon fumé français (filet de porc)
   [['des de jambon', 'jambon'], 115, 19, 1, 4],
   [['chorizo'], 450, 24, 2, 38],
   [['foie gras'], 460, 7, 4, 45, 650], // un lobe cru ≈ 600 à 700 g
@@ -52,6 +53,7 @@ const FOODS = [
   [['fromage frais'], 260, 6, 3.5, 25],
   [['yaourt grec'], 120, 5, 4, 10, 150],
   [['parmesan'], 390, 33, 0, 28],
+  [['cheddar'], 410, 25, 0.5, 34],
   [['comte', 'beaufort'], 410, 27, 0, 34],
   [['gruyere', 'emmental', 'fromage rape'], 380, 28, 0, 29],
   [['mozzarella'], 250, 18, 1, 19],
