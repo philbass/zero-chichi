@@ -64,7 +64,7 @@ Dans `src/data.js`, un objet par ligne dans `ALL_RECIPES` :
 
 - `id` : unique, en minuscules avec tirets. Sert aussi de nom d'image (`public/assets/illus/<id>.webp`).
 - `added` : date AAAA-MM-JJ. **Une date future = publication programmée** : la recette reste cachée
-  jusqu'à ce jour-là, sans remise en ligne. Rythme actuel : lundi, mercredi, vendredi et samedi, dans un
+  jusqu'à ce jour-là, sans remise en ligne. Rythme actuel : lundi, mercredi et vendredi, dans un
   ordre qui suit les saisons. Montrer la liste et les recettes à Eric avant de programmer.
 - `cats` : catégories prises dans `CATS` (Entrées, Soupe, Plats, Viandes, Accompagnement, Pâtes,
   Tartes salées, Desserts, Cakes, Pain, Sauces, Apéro).
