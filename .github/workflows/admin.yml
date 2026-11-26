@@ -1,12 +1,13 @@
-# Met en ligne le relais de « Zéro Chichi Admin » (dossier worker-admin/) sur Cloudflare,
-# et y copie les clés gardées dans les secrets du dépôt GitHub.
+# Met en ligne « Zéro Chichi Admin » sur Cloudflare (https://zc-admin.philbass.workers.dev) :
+# l'app (admin/, construite dans dist-admin/) et son relais (worker-admin/), avec les clés
+# gardées dans les secrets du dépôt GitHub.
 # Secrets nécessaires : CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID (déjà là), GEMINI_API_KEY (déjà là),
 #                       ANTHROPIC_API_KEY, ADMIN_CODE, ADMIN_GITHUB_TOKEN (à ajouter).
-name: Publier le relais de l'admin (Cloudflare)
+name: Publier Zéro Chichi Admin (Cloudflare)
 on:
   push:
     branches: [main]
-    paths: ['worker-admin/**', '.github/workflows/admin.yml']
+    paths: ['admin/**', 'worker-admin/**', 'src/**', 'scripts/illustrations/**', 'vite.admin.config.js', 'package*.json', '.github/workflows/admin.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -15,6 +16,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Construire l'app
+        run: npx vite build -c vite.admin.config.js
       - uses: cloudflare/wrangler-action@v4
         env:
           ADMIN_CODE: ${{ secrets.ADMIN_CODE }}

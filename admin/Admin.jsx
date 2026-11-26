@@ -1,13 +1,13 @@
 // Zéro Chichi Admin : ajouter une recette (photo + texte → Claude → illustration → aperçu → publication).
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { api, DEMO, lireCode, garderCode } from './api.js';
+import { api, DEMO, SITE, lireCode, garderCode } from './api.js';
 import { promptIllustration } from './illus.js';
 import { prepareIllustration, blobToDataUrl } from '../src/imageTools.js';
 import { macros } from '../src/nutrition.js';
 import { seasonsOf, SEASON_LABEL } from '../src/season.js';
 import { fmtT, waitLabel, ingredientToLine, parseIngredient, today } from '../src/lib.js';
 
-const ILLUS = '../assets/illus/';
+const ILLUS = SITE + 'assets/illus/';
 // Mêmes catégories que CATS dans src/data.js (recopiées pour ne pas charger toutes les recettes).
 const CATS = ['Entrées', 'Soupe', 'Plats', 'Viandes', 'Accompagnement', 'Pâtes', 'Tartes salées', 'Desserts', 'Cakes', 'Pain', 'Sauces', 'Apéro'];
 const CLE_BROUILLON = 'zca:brouillon';
@@ -264,7 +264,7 @@ function Reglages({ onDeconnexion }) {
         <span className="gras">Illustrations</span><span className="doux">Gemini, style carnet aquarelle, sans texte.</span>
         <span className="gras">Publication</span><span className="doux">Directement sur le dépôt GitHub : Zéro Chichi est à jour en 1 à 2 minutes.</span>
       </div>
-      <a className="bouton clair" href="../">Ouvrir Zéro Chichi</a>
+      <a className="bouton clair" href={SITE}>Ouvrir Zéro Chichi</a>
       {!DEMO && <button type="button" className="bouton clair" onClick={onDeconnexion}>Oublier le code sur ce téléphone</button>}
     </div>
   );
