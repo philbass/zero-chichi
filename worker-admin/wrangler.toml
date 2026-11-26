@@ -1,0 +1,13 @@
+# Relais de l'app « Zéro Chichi Admin » : https://zc-admin.philbass.workers.dev
+# Garde les clés (Claude, Gemini, GitHub) à l'abri : l'app ne les voit jamais.
+# Mis en ligne par .github/workflows/admin.yml, qui y copie les secrets du dépôt GitHub.
+name = "zc-admin"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+workers_dev = true
+
+[vars]
+REPO = "philbass/zero-chichi"
+BRANCH = "main"
+CLAUDE_MODEL = "claude-opus-5-5"
+GEMINI_MODEL = "gemini-2.5-flash-image"
