@@ -1,5 +1,8 @@
 // Appels au relais Cloudflare (worker-admin/). Le code d'accès est gardé sur le téléphone.
-export const RELAIS = 'https://zc-admin.philbass.workers.dev';
+// L'app est servie par le relais lui-même : même adresse. En développement local, on vise le relais en ligne.
+export const RELAIS = location.hostname.endsWith('workers.dev') ? '' : 'https://zc-admin.philbass.workers.dev';
+// Illustrations publiées : celles du site de Zéro Chichi.
+export const SITE = 'https://philbass.github.io/zero-chichi/';
 const CLE_CODE = 'zca:code';
 export const DEMO = new URLSearchParams(location.search).has('demo');
 
@@ -44,7 +47,7 @@ const demo = {
   async former() { await pause(1800); return { recette: { ...DEMO_RECETTE }, remarques: 'Temps de cuisson estimé : la source ne le précisait pas.' }; },
   async illustrer() {
     await pause(1500);
-    const blob = await (await fetch('../assets/illus/blaff-poisson.webp')).blob();
+    const blob = await (await fetch(SITE + 'assets/illus/blaff-poisson.webp')).blob();
     const data = await new Promise(ok => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.readAsDataURL(blob); });
     return { type: 'image/webp', data, demo: true };
   },
