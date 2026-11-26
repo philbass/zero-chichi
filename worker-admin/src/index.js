@@ -107,7 +107,7 @@ function consignes(existantes) {
     .map(id => existantes.find(r => r.id === id)?.ligne).filter(Boolean).join('\n');
   const liste = existantes.map(r => `${r.id} : ${r.name}`).join('\n');
   return `Tu mets en forme des recettes pour « Zéro Chichi », une appli de cuisine française aux recettes courtes et simples.
-On te donne du texte et/ou des photos (page de livre, fiche, capture d'écran, notes manuscrites). Rédige la recette avec l'outil « recette ».
+On te donne du texte et/ou des photos (page de livre, fiche, capture d'écran, notes manuscrites). Rédige la recette et enregistre-la en appelant OBLIGATOIREMENT l'outil « recette », une seule fois, sans autre texte.
 
 Règles de rédaction :
 - Tutoiement partout (« Fais dorer », « Ajoute »).
@@ -142,7 +142,8 @@ async function former(env, { texte = '', photos = [], note = '' }, existantes) {
       max_tokens: 4000,
       system: consignes(existantes),
       tools: [{ name: 'recette', description: 'Enregistre la recette mise en forme.', input_schema: SCHEMA }],
-      tool_choice: { type: 'tool', name: 'recette' },
+      // Certains modèles refusent l'obligation d'utiliser un outil : on laisse « auto » et la consigne l'exige.
+      tool_choice: { type: 'auto' },
       messages: [{ role: 'user', content }],
     }),
   });
@@ -153,8 +154,14 @@ async function former(env, { texte = '', photos = [], note = '' }, existantes) {
     if (/credit|billing/i.test(msg)) throw new Oups('Crédit Claude épuisé : recharge-le sur console.anthropic.com.', 502);
     throw new Oups(`Claude ${res.status} : ${msg.slice(0, 200)}`, 502);
   }
-  const r = body.content?.find(c => c.type === 'tool_use')?.input;
-  if (!r) throw new Oups('Claude n\'a pas renvoyé de recette. Réessaie.', 502);
+  let r = body.content?.find(c => c.type === 'tool_use' && c.name === 'recette')?.input;
+  if (!r) {
+    // Filet de sécurité : une recette écrite en JSON dans le texte de la réponse.
+    const texteRep = (body.content || []).filter(c => c.type === 'text').map(c => c.text).join('\n');
+    const m = texteRep.match(/\{[\s\S]*\}/);
+    try { r = m && JSON.parse(m[0]); } catch { r = null; }
+  }
+  if (!r?.name) throw new Oups('Claude n\'a pas renvoyé de recette. Réessaie.', 502);
   return nettoyer(r, existantes);
 }
 
