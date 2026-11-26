@@ -1,0 +1,33 @@
+# Met en ligne le relais de « Zéro Chichi Admin » (dossier worker-admin/) sur Cloudflare,
+# et y copie les clés gardées dans les secrets du dépôt GitHub.
+# Secrets nécessaires : CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID (déjà là), GEMINI_API_KEY (déjà là),
+#                       ANTHROPIC_API_KEY, ADMIN_CODE, ADMIN_GITHUB_TOKEN (à ajouter).
+name: Publier le relais de l'admin (Cloudflare)
+on:
+  push:
+    branches: [main]
+    paths: ['worker-admin/**', '.github/workflows/admin.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cloudflare/wrangler-action@v4
+        env:
+          ADMIN_CODE: ${{ secrets.ADMIN_CODE }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.ADMIN_GITHUB_TOKEN }}
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: worker-admin
+          command: deploy
+          secrets: |
+            ADMIN_CODE
+            ANTHROPIC_API_KEY
+            GEMINI_API_KEY
+            GITHUB_TOKEN

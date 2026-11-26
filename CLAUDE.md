@@ -95,3 +95,24 @@ sans image reçoivent la leur, commitée sur la branche, avec un aperçu posté 
 - Quand un changement doit forcer la mise à jour du cache hors ligne, incrémente `CACHE` dans
   `public/sw.js` (`zero-chichi-v6` → `v7`…).
 - Les vidéos `.mp4` sont exclues du précache.
+
+## Zéro Chichi Admin (`admin/` + `worker-admin/`)
+
+App séparée, installable, pour qu'Eric ajoute des recettes sans passer par Claude :
+https://philbass.github.io/zero-chichi/admin/ (icône vert + bandeau orange ADMIN, `public/admin/`).
+Démonstration sans clé ni envoi : `…/admin/?demo`.
+
+Parcours : photo(s) et/ou texte → **Claude** met en forme (règles de rédaction ci-dessus) → **Gemini**
+dessine l'illustration (même prompt et images de référence que `scripts/illustrer.mjs`, détourage dans
+l'app avec `src/imageTools.js`) → aperçu et modifications → date (prochain lundi/mercredi/vendredi libre,
+date choisie, ou tout de suite) → publication.
+
+- **Publication = commit direct sur `main`** (ligne ajoutée à la fin de `ALL_RECIPES` + `public/assets/illus/<id>.webp`),
+  validé par Eric dans l'aperçu de l'app. La date `added` fait le reste.
+- Le relais `worker-admin/` (Cloudflare, `zc-admin.philbass.workers.dev`) garde les clés ; l'app envoie
+  seulement le code d'accès (`X-Admin-Code`). Mis en ligne par `.github/workflows/admin.yml`, qui copie
+  les secrets du dépôt : `ADMIN_CODE`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `ADMIN_GITHUB_TOKEN`
+  (jeton « fine-grained », accès Contents en lecture/écriture à ce dépôt seulement).
+- Modèle Claude : `CLAUDE_MODEL` dans `worker-admin/wrangler.toml`.
+- Les fichiers de l'admin sont exclus du précache de Zéro Chichi (`precache.mjs`) ; l'admin a son propre
+  service worker (`public/admin/sw.js`, portée `admin/`).
