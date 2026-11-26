@@ -98,25 +98,10 @@ sans image reçoivent la leur, commitée sur la branche, avec un aperçu posté 
 
 ## Zéro Chichi Admin (`admin/` + `worker-admin/`)
 
-App séparée, installable, pour qu'Eric ajoute des recettes sans passer par Claude :
-**https://zc-admin.philbass.workers.dev/** (icône vert + bandeau orange ADMIN, `admin/public/`).
-Démonstration sans clé ni envoi : `…/?demo`.
+App séparée et installable pour qu'Eric ajoute ses recettes depuis son téléphone :
+https://zc-admin.philbass.workers.dev/ — **tout le détail est dans `admin/CLAUDE.md`**, à lire avant
+de toucher à `admin/`, `worker-admin/`, `vite.admin.config.js` ou `.github/workflows/admin.yml`.
 
-- **Adresse à part, exprès** : sous `philbass.github.io/zero-chichi/`, le téléphone la prenait pour une page
-  de Zéro Chichi (« déjà installée »). Elle est donc servie par le relais Cloudflare lui-même ; ne pas la
-  remettre sous le site GitHub Pages. `public/admin/index.html` redirige l'ancienne adresse.
-- Build : `npx vite build -c vite.admin.config.js` → `dist-admin/` (fait par le workflow `admin.yml`).
-
-Parcours : photo(s) et/ou texte → **Claude** met en forme (règles de rédaction ci-dessus) → **Gemini**
-dessine l'illustration (même prompt et images de référence que `scripts/illustrer.mjs`, détourage dans
-l'app avec `src/imageTools.js`) → aperçu et modifications → date (prochain lundi/mercredi/vendredi libre,
-date choisie, ou tout de suite) → publication.
-
-- **Publication = commit direct sur `main`** (ligne ajoutée à la fin de `ALL_RECIPES` + `public/assets/illus/<id>.webp`),
-  validé par Eric dans l'aperçu de l'app. La date `added` fait le reste.
-- Le relais `worker-admin/` garde les clés ; l'app envoie seulement le code d'accès (`X-Admin-Code`).
-  App et relais sont mis en ligne ensemble par `.github/workflows/admin.yml`, qui copie
-  les secrets du dépôt : `ADMIN_CODE`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `ADMIN_GITHUB_TOKEN`
-  (jeton « fine-grained », accès Contents en lecture/écriture à ce dépôt seulement).
-- Modèle Claude : `CLAUDE_MODEL` dans `worker-admin/wrangler.toml`.
-- L'admin a son propre service worker (`admin/public/sw.js`), qui ne garde jamais les réponses du relais.
+À retenir ici : les recettes publiées depuis l'admin arrivent **directement sur `main`** (commit
+« Nouvelle recette : … depuis Zéro Chichi Admin ») ; ce n'est pas une anomalie. Et les fichiers partagés
+(`src/imageTools.js`, `src/nutrition.js`, `src/season.js`, `src/lib.js`, `scripts/illustrations/`) servent aussi à l'admin.
